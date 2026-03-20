@@ -23,6 +23,7 @@
     "prisma": "^7.5.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
+    "react-plaid-link": "^4.1.1",
     "recharts": "^3.8.0",
     "shadcn": "^4.1.0",
     "tailwind-merge": "^3.5.0",

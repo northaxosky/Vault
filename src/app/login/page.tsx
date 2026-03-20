@@ -19,7 +19,7 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
     // Prevent the browser from doing a full page reload (default form behavior)
     e.preventDefault();
     setError("");
@@ -69,14 +69,14 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50">
-      <div className="w-full max-w-md space-y-8 rounded-lg bg-white p-8 shadow">
+    <div className="bg-mesh flex min-h-screen items-center justify-center bg-background">
+      <div className="glass-strong glow w-full max-w-md space-y-8 rounded-xl p-8">
         {/* Header */}
         <div className="text-center">
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">
             Vault
           </h1>
-          <p className="mt-2 text-sm text-gray-600">
+          <p className="mt-2 text-sm text-muted-foreground">
             {isRegister
               ? "Create an account to get started"
               : "Sign in to your account"}
@@ -90,7 +90,7 @@ export default function LoginPage() {
             <div>
               <label
                 htmlFor="name"
-                className="block text-sm font-medium text-gray-700"
+                className="block text-sm font-medium text-foreground"
               >
                 Name
               </label>
@@ -99,7 +99,7 @@ export default function LoginPage() {
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="mt-1 block w-full rounded-lg border border-border bg-input px-3 py-2 text-foreground placeholder-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 placeholder="Your name"
               />
             </div>
@@ -108,7 +108,7 @@ export default function LoginPage() {
           <div>
             <label
               htmlFor="email"
-              className="block text-sm font-medium text-gray-700"
+              className="block text-sm font-medium text-foreground"
             >
               Email
             </label>
@@ -118,7 +118,7 @@ export default function LoginPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="mt-1 block w-full rounded-lg border border-border bg-input px-3 py-2 text-foreground placeholder-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
               placeholder="you@example.com"
             />
           </div>
@@ -126,7 +126,7 @@ export default function LoginPage() {
           <div>
             <label
               htmlFor="password"
-              className="block text-sm font-medium text-gray-700"
+              className="block text-sm font-medium text-foreground"
             >
               Password
             </label>
@@ -136,21 +136,21 @@ export default function LoginPage() {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="mt-1 block w-full rounded-lg border border-border bg-input px-3 py-2 text-foreground placeholder-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
               placeholder={isRegister ? "At least 8 characters" : "Your password"}
             />
           </div>
 
           {/* Error message */}
           {error && (
-            <p className="text-sm text-red-600">{error}</p>
+            <p className="text-sm text-destructive">{error}</p>
           )}
 
           {/* Submit button */}
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
+            className="w-full rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/80 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background disabled:opacity-50"
           >
             {loading
               ? "Loading..."
@@ -161,7 +161,7 @@ export default function LoginPage() {
         </form>
 
         {/* Toggle between login and register */}
-        <p className="text-center text-sm text-gray-600">
+        <p className="text-center text-sm text-muted-foreground">
           {isRegister ? "Already have an account?" : "Don't have an account?"}{" "}
           <button
             type="button"
@@ -169,7 +169,7 @@ export default function LoginPage() {
               setIsRegister(!isRegister);
               setError("");
             }}
-            className="font-medium text-blue-600 hover:text-blue-500"
+            className="font-medium text-primary hover:text-primary/80 transition-colors"
           >
             {isRegister ? "Sign in" : "Create one"}
           </button>

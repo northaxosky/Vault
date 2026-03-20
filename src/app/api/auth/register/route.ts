@@ -39,11 +39,16 @@ export async function POST(request: Request) {
     // Higher = more secure but slower.
     const passwordHash = await bcrypt.hash(password, 10);
 
+    // --- Capitalize each word in the name ---
+    const formattedName = name
+      ? name.trim().replace(/\b\w/g, (c: string) => c.toUpperCase())
+      : null;
+
     // --- Create the user ---
     const user = await prisma.user.create({
       data: {
         email,
-        name: name || null,
+        name: formattedName,
         passwordHash,
       },
     });

@@ -71,10 +71,22 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return token;
     },
 
-    // When your code reads the session, make the user ID available.
+    // When your code reads the session, pull fresh user data from the DB.
+    // This ensures name changes (like our capitalization fix) show up
+    // without needing to log out and back in.
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string;
+
+        const dbUser = await prisma.user.findUnique({
+          where: { id: token.id as string },
+          select: { name: true, email: true },
+        });
+
+        if (dbUser) {
+          session.user.name = dbUser.name;
+          session.user.email = dbUser.email;
+        }
       }
       return session;
     },
