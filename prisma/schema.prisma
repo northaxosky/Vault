@@ -11,3 +11,64 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+model User {
+  id           String      @id @default(uuid())
+  name         String?
+  email        String      @unique
+  passwordHash String?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  plaidItems   PlaidItem[] // a user can have many linked banks
+}
+
+model PlaidItem {
+  id              String   @id @default(uuid())
+  userId          String
+  plaidItemId     String   @unique // Plaid's ID for this bank connection
+  accessToken     String            // encrypted with AES-256-GCM
+  institutionName String?
+  cursor          String?           // bookmark for transaction sync
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user            User      @relation(fields: [userId], references: [id])
+  accounts        Account[] // a bank connection has many accounts
+}
+
+model Account {
+  id               String   @id @default(uuid())
+  plaidItemId      String
+  plaidAccountId   String   @unique // Plaid's ID for this specific account
+  name             String            // user-facing name ("My Checking")
+  officialName     String?           // bank's official name ("TOTAL CHECKING")
+  type             String            // checking, savings, investment, credit
+  subtype          String?           // e.g. "401k", "cd", "money market"
+  currentBalance   Decimal?          // exact balance right now
+  availableBalance Decimal?          // balance available to spend
+  currency         String   @default("USD")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  plaidItem        PlaidItem      @relation(fields: [plaidItemId], references: [id])
+  transactions     Transaction[]  // an account has many transactions
+}
+
+model Transaction {
+  id                 String   @id @default(uuid())
+  accountId          String
+  plaidTransactionId String   @unique // Plaid's ID for this transaction
+  name               String            // description from the bank ("UBER EATS")
+  merchantName       String?           // cleaned-up merchant name ("Uber Eats")
+  amount             Decimal           // positive = money spent, negative = income
+  date               DateTime          // when the transaction occurred
+  category           String?           // primary category ("Food and Drink")
+  subcategory        String?           // more specific ("Restaurants")
+  pending            Boolean  @default(false) // true if not yet settled
+  currency           String   @default("USD")
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  account            Account  @relation(fields: [accountId], references: [id])
+}
