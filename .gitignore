@@ -48,3 +48,5 @@ prisma/*.db-journal
 
 # local files (notes, scratch, etc.)
 .local/
+
+/src/generated/prisma
