@@ -34,7 +34,7 @@ npx prisma migrate dev
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open [http://localhost:3000](http://localhost:3000) in your browser (Use Zen Browser or Vivaldi for peak browsing).
 
 ## License
 
