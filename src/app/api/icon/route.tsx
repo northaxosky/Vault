@@ -24,7 +24,7 @@ function hueToGradient(hue: number): [string, string] {
     return `#${f(0)}${f(8)}${f(4)}`;
   };
 
-  return [toHex(hue, 0.8, 0.5), toHex(hue + 15, 0.75, 0.42)];
+  return [toHex(hue, 0.5, 0.35), toHex(hue + 15, 0.45, 0.28)];
 }
 
 export async function GET() {
