@@ -26,11 +26,37 @@ export default async function DashboardLayout({
 
   const accentHue = settings?.accentHue ?? 195;
 
+  // We set ALL accent-derived CSS variables directly on this wrapper element
+  // as pre-computed values rather than relying on var(--accent-hue).
+  //
+  // Why? CSS custom properties resolve at the element where they're defined.
+  // The .dark class on <html> defines --primary: oklch(0.75 0.15 var(--accent-hue)),
+  // which resolves --accent-hue at the <html> level (always 195, the default).
+  // Setting --accent-hue on a child div does NOT cause --primary to recompute.
+  //
+  // By setting the final computed values here, everything under this wrapper
+  // inherits the correct accent color — both bg-mesh gradients AND semantic
+  // tokens like --primary, --ring, etc.
+  const accentStyle = {
+    "--accent-hue": String(accentHue),
+    "--primary": `oklch(0.75 0.15 ${accentHue})`,
+    "--accent": `oklch(0.25 0.03 ${accentHue})`,
+    "--ring": `oklch(0.75 0.15 ${accentHue})`,
+    "--chart-1": `oklch(0.75 0.15 ${accentHue})`,
+    "--chart-2": `oklch(0.7 0.15 ${accentHue + 105})`,
+    "--chart-3": `oklch(0.72 0.15 ${accentHue - 30})`,
+    "--chart-4": `oklch(0.65 0.15 ${accentHue + 60})`,
+    "--chart-5": `oklch(0.7 0.15 ${accentHue + 145})`,
+    "--sidebar-primary": `oklch(0.75 0.15 ${accentHue})`,
+    "--sidebar-ring": `oklch(0.75 0.15 ${accentHue})`,
+  } as React.CSSProperties;
+
   return (
     <TooltipProvider>
       <div
         className="bg-mesh flex min-h-screen bg-background"
-        style={{ "--accent-hue": String(accentHue) } as React.CSSProperties}
+        data-accent-root
+        style={accentStyle}
       >
         <DashboardSidebar
           userName={session.user.name ?? null}

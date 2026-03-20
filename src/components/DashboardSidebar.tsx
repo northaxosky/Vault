@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import {
@@ -57,9 +58,16 @@ function SidebarContent({
   return (
     <div className="flex h-full flex-col">
       {/* Logo */}
-      <div className="px-4 py-5">
+      <Link href="/dashboard" onClick={onNavigate} className="flex items-center gap-2.5 px-4 py-5 transition-colors hover:opacity-80">
+        <Image
+          src="/VaultIcon.png"
+          alt=""
+          width={24}
+          height={24}
+          className="invert opacity-90"
+        />
         <h1 className="text-xl font-bold text-primary">Vault</h1>
-      </div>
+      </Link>
 
       {/* Main nav */}
       <nav className="flex-1 space-y-1 px-3">
@@ -171,7 +179,10 @@ export default function DashboardSidebar({
             />
           </SheetContent>
         </Sheet>
-        <h1 className="text-lg font-bold text-primary">Vault</h1>
+        <Link href="/dashboard" className="flex items-center gap-2">
+          <Image src="/VaultIcon.png" alt="" width={20} height={20} className="invert opacity-90" />
+          <h1 className="text-lg font-bold text-primary">Vault</h1>
+        </Link>
       </div>
     </>
   );

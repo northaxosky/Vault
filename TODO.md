@@ -7,7 +7,7 @@
 
 ## In Progress
 
-- [ ] Favicon: accent-colored background with vault icon (done, needs testing across browsers)
+- [x] Favicon: accent-colored background with vault icon (done, needs testing across browsers)
 
 ## Features — Core Pages
 

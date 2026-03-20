@@ -27,10 +27,28 @@ export default function AccentColorPicker({
 
   // Apply the hue instantly to the DOM (live preview),
   // then debounce the API call to persist it.
+  //
+  // We target the [data-accent-root] wrapper div — the same element where
+  // the server-rendered layout sets accent variables. This ensures client-side
+  // changes and server-rendered values are always on the same DOM element,
+  // so bg-mesh gradients (which use --accent-hue) and semantic tokens like
+  // --primary (which need pre-computed values) both update together.
   const handleChange = useCallback(
     (hue: number) => {
-      // Instant visual update — no page reload needed
-      document.documentElement.style.setProperty("--accent-hue", String(hue));
+      const root =
+        document.querySelector<HTMLElement>("[data-accent-root]") ??
+        document.documentElement;
+      root.style.setProperty("--accent-hue", String(hue));
+      root.style.setProperty("--primary", `oklch(0.75 0.15 ${hue})`);
+      root.style.setProperty("--accent", `oklch(0.25 0.03 ${hue})`);
+      root.style.setProperty("--ring", `oklch(0.75 0.15 ${hue})`);
+      root.style.setProperty("--chart-1", `oklch(0.75 0.15 ${hue})`);
+      root.style.setProperty("--chart-2", `oklch(0.7 0.15 ${hue + 105})`);
+      root.style.setProperty("--chart-3", `oklch(0.72 0.15 ${hue - 30})`);
+      root.style.setProperty("--chart-4", `oklch(0.65 0.15 ${hue + 60})`);
+      root.style.setProperty("--chart-5", `oklch(0.7 0.15 ${hue + 145})`);
+      root.style.setProperty("--sidebar-primary", `oklch(0.75 0.15 ${hue})`);
+      root.style.setProperty("--sidebar-ring", `oklch(0.75 0.15 ${hue})`);
       onHueChange(hue);
 
       // Debounce the save to the server (300ms after last change)
