@@ -51,8 +51,9 @@ model Account {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
-  plaidItem        PlaidItem      @relation(fields: [plaidItemId], references: [id])
-  transactions     Transaction[]  // an account has many transactions
+  plaidItem        PlaidItem            @relation(fields: [plaidItemId], references: [id])
+  transactions     Transaction[]        // an account has many transactions
+  holdings         InvestmentHolding[]  // an investment account has many holdings
 }
 
 model Transaction {
@@ -71,4 +72,31 @@ model Transaction {
   updatedAt          DateTime @updatedAt
 
   account            Account  @relation(fields: [accountId], references: [id])
+}
+
+model Security {
+  id              String              @id @default(uuid())
+  plaidSecurityId String              @unique // Plaid's ID for this security
+  name            String?                      // "Apple Inc."
+  ticker          String?                      // "AAPL" — not all securities have tickers
+  type            String?                      // stock, etf, mutual fund, crypto, etc.
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  holdings        InvestmentHolding[]           // many holdings can reference this security
+}
+
+model InvestmentHolding {
+  id           String   @id @default(uuid())
+  accountId    String
+  securityId   String
+  quantity     Decimal           // number of shares/units
+  costBasis    Decimal?          // what the user originally paid
+  currentValue Decimal?          // what it's worth now
+  currency     String   @default("USD")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  account      Account  @relation(fields: [accountId], references: [id])
+  security     Security @relation(fields: [securityId], references: [id])
 }
