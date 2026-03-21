@@ -7,14 +7,14 @@
 
 ## In Progress
 
-- [ ] **Investments page** (`/dashboard/investments`) — holdings, performance, allocation chart
+- [ ] Dashboard: recent transactions section below linked accounts
 
 ## Features — Core Pages
 
 - [x] **Dashboard home** — summary cards (net worth, cash, credit), linked accounts grouped by institution
 - [x] **Transactions page** (`/dashboard/transactions`) — searchable/filterable transaction list with category icons and date grouping
 - [x] **Accounts page** (`/dashboard/accounts`) — accounts grouped by institution with type filtering, subtypes, balances, and transaction counts
-- [ ] **Investments page** (`/dashboard/investments`) — holdings, performance, allocation chart
+- [x] **Investments page** (`/dashboard/investments`) — holdings grouped by account, summary cards (portfolio value, cost basis, gain/loss), ticker badges, security types
 - [ ] Dashboard: recent transactions section below linked accounts
 - [ ] Dashboard: spending-by-category chart (Recharts is installed)
 
@@ -34,7 +34,7 @@
 
 - [x] Plaid transaction sync (cursor-based, auto-sync on dashboard load, manual Sync button)
 - [x] Plaid sync after linking (PlaidLink triggers sync automatically)
-- [ ] Plaid investment holdings sync
+- [x] Plaid investment holdings sync (snapshot-based, upsert securities + holdings, stale cleanup)
 - [ ] Recurring transaction detection
 - [ ] Budget / spending categories
 
@@ -53,4 +53,4 @@
 
 ---
 
-Last updated: 2026-03-20
+Last updated: 2026-03-21

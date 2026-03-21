@@ -100,6 +100,8 @@ model InvestmentHolding {
 
   account      Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
   security     Security @relation(fields: [securityId], references: [id])
+
+  @@unique([accountId, securityId]) // one holding per security per account
 }
 
 model UserSettings {

@@ -146,6 +146,97 @@ export async function POST() {
         where: { id: item.id },
         data: { cursor },
       });
+
+      // --- Investment holdings sync ---
+      // Unlike transactions, investments aren't cursor-based.
+      // investmentsHoldingsGet returns a full snapshot each time,
+      // so we upsert everything and remove stale holdings.
+      // Wrapped in try/catch because items linked before we added
+      // Products.Investments will fail — that's expected.
+      try {
+        const investResponse = await plaidClient.investmentsHoldingsGet({
+          access_token: accessToken,
+        });
+
+        const { holdings, securities } = investResponse.data;
+
+        // Build a lookup: Plaid security_id → our Security record id
+        const securityMap = new Map<string, string>();
+
+        for (const sec of securities) {
+          const upserted = await prisma.security.upsert({
+            where: { plaidSecurityId: sec.security_id },
+            update: {
+              name: sec.name ?? undefined,
+              ticker: sec.ticker_symbol ?? undefined,
+              type: sec.type ?? undefined,
+            },
+            create: {
+              plaidSecurityId: sec.security_id,
+              name: sec.name ?? undefined,
+              ticker: sec.ticker_symbol ?? undefined,
+              type: sec.type ?? undefined,
+            },
+          });
+          securityMap.set(sec.security_id, upserted.id);
+        }
+
+        // Track which holdings we upserted so we can clean up stale ones
+        const upsertedHoldingIds: string[] = [];
+
+        for (const holding of holdings) {
+          const ourAccountId = accountMap.get(holding.account_id);
+          const ourSecurityId = securityMap.get(holding.security_id);
+          if (!ourAccountId || !ourSecurityId) continue;
+
+          // Manual upsert: Prisma v7 doesn't expose the @@unique compound
+          // key in upsert's WhereUniqueInput, so we find + update/create instead.
+          const existing = await prisma.investmentHolding.findFirst({
+            where: { accountId: ourAccountId, securityId: ourSecurityId },
+            select: { id: true },
+          });
+
+          const holdingData = {
+            quantity: holding.quantity,
+            costBasis: holding.cost_basis,
+            currentValue: holding.institution_value,
+            currency: holding.iso_currency_code || "USD",
+          };
+
+          let holdingId: string;
+          if (existing) {
+            await prisma.investmentHolding.update({
+              where: { id: existing.id },
+              data: holdingData,
+            });
+            holdingId = existing.id;
+          } else {
+            const created = await prisma.investmentHolding.create({
+              data: {
+                accountId: ourAccountId,
+                securityId: ourSecurityId,
+                ...holdingData,
+              },
+            });
+            holdingId = created.id;
+          }
+          upsertedHoldingIds.push(holdingId);
+        }
+
+        // Remove holdings that no longer exist (user sold the position).
+        // Only delete from accounts we just synced, not all accounts.
+        const syncedAccountIds = [...accountMap.values()];
+        if (syncedAccountIds.length > 0) {
+          await prisma.investmentHolding.deleteMany({
+            where: {
+              accountId: { in: syncedAccountIds },
+              id: { notIn: upsertedHoldingIds },
+            },
+          });
+        }
+      } catch {
+        // Expected for items without investment access — silently skip
+      }
     }
 
     return NextResponse.json({
@@ -155,9 +246,9 @@ export async function POST() {
       removed: totalRemoved,
     });
   } catch (error) {
-    console.error("Error syncing transactions:", error);
+    console.error("Error syncing:", error);
     return NextResponse.json(
-      { error: "Failed to sync transactions" },
+      { error: "Failed to sync" },
       { status: 500 }
     );
   }
