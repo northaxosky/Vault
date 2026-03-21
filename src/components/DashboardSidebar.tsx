@@ -17,6 +17,17 @@ import {
 import { useState } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 // Navigation items — each becomes a link in the sidebar
 const navItems = [
@@ -129,13 +140,33 @@ function SidebarContent({
               </p>
             </div>
           </Link>
-          <button
-            onClick={() => signOut({ callbackUrl: "/login" })}
-            className="text-muted-foreground hover:text-destructive transition-colors"
-            title="Sign out"
-          >
-            <LogOut className="h-4 w-4" />
-          </button>
+          <Dialog>
+            <DialogTrigger
+              className="text-muted-foreground hover:text-destructive transition-colors"
+              title="Sign out"
+            >
+              <LogOut className="h-4 w-4" />
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Sign out</DialogTitle>
+                <DialogDescription>
+                  Are you sure you want to sign out of Vault?
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <DialogClose render={<Button variant="outline" />}>
+                  Cancel
+                </DialogClose>
+                <Button
+                  variant="destructive"
+                  onClick={() => signOut({ callbackUrl: "/login" })}
+                >
+                  Sign out
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
     </div>
