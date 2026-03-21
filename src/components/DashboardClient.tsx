@@ -1,11 +1,13 @@
 "use client";
 
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Wallet,
   Landmark,
   CreditCard,
   PiggyBank,
+  RefreshCw,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import PlaidLink from "@/components/PlaidLink";
@@ -59,6 +61,39 @@ export default function DashboardClient({
   institutions,
 }: DashboardClientProps) {
   const router = useRouter();
+  const [syncing, setSyncing] = useState(false);
+  const syncInProgress = useRef(false);
+
+  // Sync transactions from Plaid for all linked banks.
+  // Uses a ref guard to prevent concurrent syncs (e.g., if auto-sync
+  // is running when the user clicks the Sync button).
+  const triggerSync = useCallback(async () => {
+    if (syncInProgress.current) return;
+    syncInProgress.current = true;
+    setSyncing(true);
+
+    try {
+      const res = await fetch("/api/plaid/sync", { method: "POST" });
+      const data = await res.json();
+      if (data.success) {
+        // Re-run the server component so it picks up fresh data from Prisma.
+        router.refresh();
+      }
+    } catch (error) {
+      console.error("Sync failed:", error);
+    } finally {
+      setSyncing(false);
+      syncInProgress.current = false;
+    }
+  }, [router]);
+
+  // Auto-sync on mount — fetches latest transactions in the background.
+  // The user sees stale data immediately (fast first paint), then it updates.
+  useEffect(() => {
+    if (institutions.length > 0) {
+      triggerSync();
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleLinkSuccess = () => {
     // Re-run the server component to fetch updated data from Prisma.
@@ -102,7 +137,19 @@ export default function DashboardClient({
             Your financial overview
           </p>
         </div>
-        <PlaidLink onLinkSuccess={handleLinkSuccess} />
+        <div className="flex items-center gap-3">
+          <button
+            onClick={triggerSync}
+            disabled={syncing}
+            className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent disabled:opacity-50"
+          >
+            <RefreshCw
+              className={`h-4 w-4 ${syncing ? "animate-spin" : ""}`}
+            />
+            {syncing ? "Syncing..." : "Sync"}
+          </button>
+          <PlaidLink onLinkSuccess={handleLinkSuccess} />
+        </div>
       </div>
 
       {/* Summary cards */}

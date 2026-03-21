@@ -83,6 +83,15 @@ export default function PlaidLink({
 
       if (data.success) {
         setMessage(
+          `Connected to ${data.institutionName}! Syncing transactions...`
+        );
+
+        // Trigger initial transaction sync for the newly linked bank.
+        // This runs before calling onLinkSuccess so the dashboard has
+        // fresh data when it refreshes.
+        await fetch("/api/plaid/sync", { method: "POST" });
+
+        setMessage(
           `Connected to ${data.institutionName}! ${data.accountCount} account(s) linked.`
         );
         onLinkSuccess?.();
