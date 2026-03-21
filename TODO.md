@@ -7,14 +7,16 @@
 
 ## In Progress
 
-- [x] Favicon: accent-colored background with vault icon (done, needs testing across browsers)
+- [ ] **Accounts page** (`/dashboard/accounts`) — detailed view of linked accounts
 
 ## Features — Core Pages
 
-- [ ] **Accounts page** (`/dashboard/accounts`) — list linked bank accounts with balances
-- [ ] **Transactions page** (`/dashboard/transactions`) — searchable/filterable transaction list
+- [x] **Dashboard home** — summary cards (net worth, cash, credit), linked accounts grouped by institution
+- [x] **Transactions page** (`/dashboard/transactions`) — searchable/filterable transaction list with category icons and date grouping
+- [ ] **Accounts page** (`/dashboard/accounts`) — list linked bank accounts with balances, per-account details
 - [ ] **Investments page** (`/dashboard/investments`) — holdings, performance, allocation chart
-- [ ] **Dashboard home** — summary cards (net worth, spending this month, recent transactions)
+- [ ] Dashboard: recent transactions section below linked accounts
+- [ ] Dashboard: spending-by-category chart (Recharts is installed)
 
 ## Features — Settings
 
@@ -30,13 +32,15 @@
 
 ## Features — Data & Integrations
 
-- [ ] Plaid transaction sync (webhook + scheduled)
+- [x] Plaid transaction sync (cursor-based, auto-sync on dashboard load, manual Sync button)
+- [x] Plaid sync after linking (PlaidLink triggers sync automatically)
 - [ ] Plaid investment holdings sync
 - [ ] Recurring transaction detection
 - [ ] Budget / spending categories
 
 ## Improvements
 
+- [x] Favicon: accent-colored background with vault icon
 - [ ] Charts with Recharts (spending over time, category breakdown, net worth trend)
 - [ ] Middleware-based route protection (replace per-layout auth checks)
 - [ ] Loading skeletons for async pages
@@ -44,7 +48,8 @@
 
 ## Known Issues
 
-- [ ] None currently tracked
+- [ ] Plaid double-script warning in dev (React Strict Mode, harmless)
+- [ ] `url.parse()` deprecation warning from dependency (not actionable)
 
 ---
 
