@@ -42,7 +42,11 @@ function PlaidLinkButton({
   );
 }
 
-export default function PlaidLink() {
+export default function PlaidLink({
+  onLinkSuccess,
+}: {
+  onLinkSuccess?: () => void;
+}) {
   const [linkToken, setLinkToken] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -81,6 +85,7 @@ export default function PlaidLink() {
         setMessage(
           `Connected to ${data.institutionName}! ${data.accountCount} account(s) linked.`
         );
+        onLinkSuccess?.();
       } else {
         setMessage("Something went wrong linking your account.");
       }
@@ -88,7 +93,7 @@ export default function PlaidLink() {
       console.error("Error exchanging token:", error);
       setMessage("Failed to link account. Please try again.");
     }
-  }, []);
+  }, [onLinkSuccess]);
 
   return (
     <div>
