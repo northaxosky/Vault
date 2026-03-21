@@ -7,13 +7,13 @@
 
 ## In Progress
 
-- [ ] **Accounts page** (`/dashboard/accounts`) — detailed view of linked accounts
+- [ ] **Investments page** (`/dashboard/investments`) — holdings, performance, allocation chart
 
 ## Features — Core Pages
 
 - [x] **Dashboard home** — summary cards (net worth, cash, credit), linked accounts grouped by institution
 - [x] **Transactions page** (`/dashboard/transactions`) — searchable/filterable transaction list with category icons and date grouping
-- [ ] **Accounts page** (`/dashboard/accounts`) — list linked bank accounts with balances, per-account details
+- [x] **Accounts page** (`/dashboard/accounts`) — accounts grouped by institution with type filtering, subtypes, balances, and transaction counts
 - [ ] **Investments page** (`/dashboard/investments`) — holdings, performance, allocation chart
 - [ ] Dashboard: recent transactions section below linked accounts
 - [ ] Dashboard: spending-by-category chart (Recharts is installed)
