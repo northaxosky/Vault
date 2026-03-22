@@ -1,15 +1,17 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   Search,
   X,
   ArrowLeftRight,
+  ListFilter,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -17,24 +19,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CATEGORY_CONFIG, getCategoryLabel, getCategoryIcon, formatCurrency, formatFrequency } from "@/lib/categories";
-
-// --- Types ---
-
-interface TransactionData {
-  id: string;
-  name: string;
-  merchantName: string | null;
-  amount: number; // positive = spending, negative = income
-  date: string; // ISO string
-  category: string | null;
-  subcategory: string | null;
-  pending: boolean;
-  isRecurring: boolean;
-  recurringFrequency: string | null;
-  currency: string;
-  accountName: string;
-}
+import { CATEGORY_CONFIG, getCategoryLabel, getCategoryIcon, getEffectiveCategory, formatCurrency, formatFrequency } from "@/lib/categories";
+import type { TransactionData } from "@/lib/types";
+import TransactionDrawer from "@/components/TransactionDrawer";
+import TransactionRulesDialog from "@/components/TransactionRulesDialog";
 
 interface TransactionsClientProps {
   transactions: TransactionData[];
@@ -73,14 +61,18 @@ function formatDateHeader(isoDateStr: string): string {
 
 // --- Transaction row ---
 
-function TransactionRow({ txn }: { txn: TransactionData }) {
-  const Icon = getCategoryIcon(txn.category);
+function TransactionRow({ txn, onClick }: { txn: TransactionData; onClick: () => void }) {
+  const effectiveCat = getEffectiveCategory(txn.userCategory, txn.category);
+  const Icon = getCategoryIcon(effectiveCat);
   const isIncome = txn.amount < 0;
   const displayAmount = Math.abs(txn.amount);
-  const displayName = txn.merchantName || txn.name || getCategoryLabel(txn.category);
+  const displayName = txn.merchantName || txn.name || getCategoryLabel(effectiveCat);
 
   return (
-    <div className="flex items-center gap-3 px-4 py-3">
+    <div
+      className="flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors hover:bg-accent/50"
+      onClick={onClick}
+    >
       {/* Category icon */}
       <div className="shrink-0 rounded-lg bg-primary/10 p-2">
         <Icon className="h-4 w-4 text-primary" />
@@ -102,9 +94,15 @@ function TransactionRow({ txn }: { txn: TransactionData }) {
               {formatFrequency(txn.recurringFrequency)}
             </Badge>
           )}
+          {txn.notes && (
+            <span className="shrink-0 text-xs text-muted-foreground" title={txn.notes}>📝</span>
+          )}
         </div>
         <p className="text-xs text-muted-foreground">
-          {getCategoryLabel(txn.category)}
+          {getCategoryLabel(effectiveCat)}
+          {txn.userCategory && (
+            <span className="ml-1 text-primary/70">(custom)</span>
+          )}
         </p>
       </div>
 
@@ -129,11 +127,35 @@ function TransactionRow({ txn }: { txn: TransactionData }) {
 // --- Main component ---
 
 export default function TransactionsClient({
-  transactions,
+  transactions: initialTransactions,
 }: TransactionsClientProps) {
+  const [transactions, setTransactions] = useState(initialTransactions);
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [recurringOnly, setRecurringOnly] = useState(false);
+  const [selectedTxn, setSelectedTxn] = useState<TransactionData | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [rulesOpen, setRulesOpen] = useState(false);
+
+  // Handle clicking a transaction row
+  const handleRowClick = useCallback((txn: TransactionData) => {
+    setSelectedTxn(txn);
+    setDrawerOpen(true);
+  }, []);
+
+  // Optimistically update local state after a drawer save
+  const handleTransactionUpdate = useCallback(
+    (id: string, updates: { notes: string | null; userCategory: string | null }) => {
+      setTransactions((prev) =>
+        prev.map((txn) => (txn.id === id ? { ...txn, ...updates } : txn))
+      );
+      // Also update the selected transaction so the drawer reflects the save
+      setSelectedTxn((prev) =>
+        prev && prev.id === id ? { ...prev, ...updates } : prev
+      );
+    },
+    []
+  );
 
   // Filter transactions based on search text, category, and recurring toggle.
   // useMemo avoids re-filtering on every render.
@@ -151,7 +173,7 @@ export default function TransactionsClient({
       }
 
       // Category filter
-      if (categoryFilter !== "all" && txn.category !== categoryFilter) {
+      if (categoryFilter !== "all" && getEffectiveCategory(txn.userCategory, txn.category) !== categoryFilter) {
         return false;
       }
 
@@ -192,10 +214,18 @@ export default function TransactionsClient({
   return (
     <div className="mx-auto max-w-6xl px-6 py-8">
       {/* Header */}
-      <h1 className="text-2xl font-bold text-foreground">Transactions</h1>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Your complete transaction history
-      </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Transactions</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Your complete transaction history
+          </p>
+        </div>
+        <Button variant="outline" size="sm" onClick={() => setRulesOpen(true)}>
+          <ListFilter className="mr-1.5 size-3.5" />
+          Rules
+        </Button>
+      </div>
 
       {/* Filter bar */}
       <div className="mt-6 glass rounded-xl p-4">
@@ -269,7 +299,11 @@ export default function TransactionsClient({
               {/* Transactions card for this date */}
               <div className="glass rounded-xl divide-y divide-border">
                 {txns.map((txn) => (
-                  <TransactionRow key={txn.id} txn={txn} />
+                  <TransactionRow
+                    key={txn.id}
+                    txn={txn}
+                    onClick={() => handleRowClick(txn)}
+                  />
                 ))}
               </div>
             </div>
@@ -296,6 +330,20 @@ export default function TransactionsClient({
           </button>
         </div>
       )}
+
+      {/* Transaction detail drawer */}
+      <TransactionDrawer
+        transaction={selectedTxn}
+        open={drawerOpen}
+        onOpenChange={setDrawerOpen}
+        onUpdate={handleTransactionUpdate}
+      />
+
+      {/* Transaction rules management dialog */}
+      <TransactionRulesDialog
+        open={rulesOpen}
+        onOpenChange={setRulesOpen}
+      />
     </div>
   );
 }

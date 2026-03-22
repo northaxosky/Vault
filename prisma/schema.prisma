@@ -20,11 +20,13 @@ model User {
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
 
-  plaidItems   PlaidItem[]    // a user can have many linked banks
-  settings     UserSettings?  // a user has one settings record
-  budgets      Budget[]       // per-category monthly spending limits
-  savingsGoals SavingsGoal[]  // savings goals with targets and deadlines
-  debtAccounts DebtAccount[]  // debts being tracked for payoff
+  plaidItems       PlaidItem[]    // a user can have many linked banks
+  settings         UserSettings?  // a user has one settings record
+  budgets          Budget[]       // per-category monthly spending limits
+  savingsGoals     SavingsGoal[]  // savings goals with targets and deadlines
+  debtAccounts     DebtAccount[]  // debts being tracked for payoff
+  transactionRules TransactionRule[] // auto-rename/re-categorize rules
+  alerts           Alert[]        // in-app smart alerts
 }
 
 model PlaidItem {
@@ -79,6 +81,8 @@ model Transaction {
   recurringStreamId   String?           // Plaid's stream_id grouping related recurring txns
   recurringFrequency  String?           // "WEEKLY", "BIWEEKLY", "MONTHLY", "ANNUALLY", etc.
   currency            String   @default("USD")
+  notes               String?           // user-added notes for this transaction
+  userCategory        String?           // user's category override (CATEGORY_CONFIG key)
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
@@ -209,4 +213,30 @@ model DebtAccount {
 
   user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   linkedAccount    Account?  @relation(fields: [linkedAccountId], references: [id], onDelete: SetNull)
+}
+
+model TransactionRule {
+  id               String   @id @default(uuid())
+  userId           String
+  matchField       String                        // "name" or "merchantName"
+  matchPattern     String                        // case-insensitive substring to match
+  overrideName     String?                       // rename the transaction display name
+  overrideCategory String?                       // set userCategory to this CATEGORY_CONFIG key
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Alert {
+  id              String   @id @default(uuid())
+  userId          String
+  type            String                         // "LARGE_TRANSACTION", "LOW_BALANCE", "BUDGET_OVERSPEND"
+  title           String
+  message         String
+  transactionId   String?                        // optional reference to a triggering transaction
+  read            Boolean  @default(false)
+  createdAt       DateTime @default(now())
+
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

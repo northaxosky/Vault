@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { navItems } from "@/lib/navigation";
+import AlertBell from "@/components/AlertBell";
 
 interface DashboardSidebarProps {
   userName: string | null;
@@ -95,21 +96,24 @@ function SidebarContent({
         })}
       </nav>
 
-      {/* Bottom section: Settings + User */}
+      {/* Bottom section: Settings + Alerts + User */}
       <div className="border-t border-border px-3 py-3">
-        {/* Settings link */}
-        <Link
-          href="/dashboard/settings"
-          onClick={onNavigate}
-          className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors ${
-            pathname.startsWith("/dashboard/settings")
-              ? "bg-accent text-accent-foreground border-l-2 border-primary"
-              : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
-          }`}
-        >
-          <Settings className="h-4 w-4" />
-          Settings
-        </Link>
+        {/* Settings + Alerts row */}
+        <div className="flex items-center gap-1">
+          <Link
+            href="/dashboard/settings"
+            onClick={onNavigate}
+            className={`flex flex-1 items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors ${
+              pathname.startsWith("/dashboard/settings")
+                ? "bg-accent text-accent-foreground border-l-2 border-primary"
+                : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
+            }`}
+          >
+            <Settings className="h-4 w-4" />
+            Settings
+          </Link>
+          <AlertBell />
+        </div>
 
         {/* User info + sign out */}
         <div className="mt-3 flex items-center gap-3 px-3">
@@ -199,10 +203,11 @@ export default function DashboardSidebar({
             />
           </SheetContent>
         </Sheet>
-        <Link href="/dashboard" className="flex items-center gap-2">
+        <Link href="/dashboard" className="flex flex-1 items-center gap-2">
           <Image src="/VaultIcon.png" alt="" width={20} height={20} className="dark:invert opacity-90" />
           <h1 className="text-lg font-bold text-primary">Vault</h1>
         </Link>
+        <AlertBell />
       </div>
     </>
   );

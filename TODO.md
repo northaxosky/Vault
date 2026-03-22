@@ -60,7 +60,7 @@
 
 ## Features — Notifications
 
-- [ ] **Smart alerts** — large transaction warnings, budget overspend, unusual activity, low balance
+- [x] **Smart alerts** — large transaction warnings, budget overspend, low balance (in-app bell + toast via sonner)
 - [ ] Wire up existing email notification settings to actually send
 
 ## Improvements
@@ -71,8 +71,8 @@
 - [x] Mobile responsive polish (flex-col layout, text truncation, shrink-0)
 - [x] Middleware-based route protection (replace per-layout auth checks)
 - [x] **Command palette** (Cmd+K / Ctrl+K) — global search across transactions, accounts, pages
-- [ ] **Transaction detail drawer** — click a transaction to see full details, add notes/tags, override category
-- [ ] **Custom transaction rules** — auto-rename or re-categorize transactions matching a pattern
+- [x] **Transaction detail drawer** — click a transaction to see full details, add notes, override category
+- [x] **Custom transaction rules** — auto-rename or re-categorize transactions matching a pattern (retroactive + during sync)
 
 ## Known Issues
 
