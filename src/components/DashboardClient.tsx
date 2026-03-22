@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import PlaidLink from "@/components/PlaidLink";
-import { CATEGORY_CONFIG, getCategoryLabel, getCategoryIcon, formatCurrency } from "@/lib/categories";
+import { CATEGORY_CONFIG, getCategoryLabel, getCategoryIcon, formatCurrency, formatFrequency } from "@/lib/categories";
 import { PieChart, Pie, Cell, Tooltip, AreaChart, Area, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from "recharts";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -110,17 +110,6 @@ const TIME_RANGES: { value: TimeRange; label: string; daysBack: number }[] = [
   { value: "3M", label: "3M", daysBack: 90 },
   { value: "6M", label: "6M", daysBack: 180 },
 ];
-
-function formatFrequency(freq: string | null): string {
-  switch (freq) {
-    case "WEEKLY": return "Weekly";
-    case "BIWEEKLY": return "Biweekly";
-    case "SEMI_MONTHLY": return "Semi-monthly";
-    case "MONTHLY": return "Monthly";
-    case "ANNUALLY": return "Annual";
-    default: return "Recurring";
-  }
-}
 
 // --- Component ---
 

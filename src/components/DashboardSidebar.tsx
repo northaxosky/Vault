@@ -10,6 +10,7 @@ import {
   ArrowLeftRight,
   TrendingUp,
   Target,
+  Repeat,
   Settings,
   LogOut,
   Menu,
@@ -37,6 +38,7 @@ const navItems = [
   { href: "/dashboard/transactions", label: "Transactions", icon: ArrowLeftRight },
   { href: "/dashboard/investments", label: "Investments", icon: TrendingUp },
   { href: "/dashboard/budgets", label: "Budgets", icon: Target },
+  { href: "/dashboard/subscriptions", label: "Subscriptions", icon: Repeat },
 ];
 
 interface DashboardSidebarProps {

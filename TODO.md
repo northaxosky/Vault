@@ -23,8 +23,8 @@
 
 ## Features — Subscriptions & Bills
 
-- [ ] **Subscriptions page** (`/dashboard/subscriptions`) — all detected recurring charges, total monthly cost, trend over time, mark as cancelled
-- [ ] **Bill calendar** — calendar view of upcoming recurring bills with projected dates and amounts
+- [x] **Subscriptions page** (`/dashboard/subscriptions`) — all detected recurring charges, total monthly cost, trend over time, mark as cancelled
+- [x] **Bill calendar** — calendar view of upcoming recurring bills with projected dates and amounts
 
 ## Features — Goals & Planning
 

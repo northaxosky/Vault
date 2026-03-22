@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CATEGORY_CONFIG, getCategoryLabel, getCategoryIcon, formatCurrency } from "@/lib/categories";
+import { CATEGORY_CONFIG, getCategoryLabel, getCategoryIcon, formatCurrency, formatFrequency } from "@/lib/categories";
 
 // --- Types ---
 
@@ -69,17 +69,6 @@ function formatDateHeader(isoDateStr: string): string {
     day: "numeric",
     year: "numeric",
   });
-}
-
-function formatFrequency(freq: string | null): string {
-  switch (freq) {
-    case "WEEKLY": return "Weekly";
-    case "BIWEEKLY": return "Biweekly";
-    case "SEMI_MONTHLY": return "Semi-monthly";
-    case "MONTHLY": return "Monthly";
-    case "ANNUALLY": return "Annual";
-    default: return "Recurring";
-  }
 }
 
 // --- Transaction row ---

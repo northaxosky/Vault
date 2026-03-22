@@ -187,8 +187,73 @@ export async function POST() {
         const { inflow_streams, outflow_streams } = recurringResponse.data;
         const allStreams = [...inflow_streams, ...outflow_streams];
 
-        // Build a map: plaidTransactionId -> { streamId, frequency }
-        // Group by stream so we can batch-update efficiently.
+        // --- Upsert RecurringStream records ---
+        // Persist stream-level metadata (average amount, predicted next date,
+        // merchant name, etc.) that powers the subscriptions page and bill calendar.
+        const syncedStreamIds: string[] = [];
+
+        for (const stream of allStreams) {
+          const ourAccountId = accountMap.get(stream.account_id);
+          if (!ourAccountId) continue;
+
+          syncedStreamIds.push(stream.stream_id);
+
+          const streamType = inflow_streams.includes(stream) ? "INFLOW" : "OUTFLOW";
+
+          const streamData = {
+            accountId: ourAccountId,
+            merchantName: stream.merchant_name || null,
+            description: stream.description,
+            category: stream.personal_finance_category?.primary || null,
+            subcategory: stream.personal_finance_category?.detailed || null,
+            firstDate: new Date(stream.first_date),
+            lastDate: new Date(stream.last_date),
+            lastAmount: stream.last_amount.amount ?? 0,
+            averageAmount: stream.average_amount.amount ?? 0,
+            predictedNextDate: stream.predicted_next_date
+              ? new Date(stream.predicted_next_date)
+              : null,
+            frequency: String(stream.frequency),
+            isActive: stream.is_active,
+            status: String(stream.status),
+            streamType,
+            currency: stream.last_amount.iso_currency_code || "USD",
+          };
+
+          // Preserve user's cancellation override across syncs
+          const existingStream = await prisma.recurringStream.findUnique({
+            where: { plaidStreamId: stream.stream_id },
+            select: { cancelledByUser: true, cancelledAt: true },
+          });
+
+          await prisma.recurringStream.upsert({
+            where: { plaidStreamId: stream.stream_id },
+            update: {
+              ...streamData,
+              cancelledByUser: existingStream?.cancelledByUser ?? false,
+              cancelledAt: existingStream?.cancelledAt ?? null,
+            },
+            create: {
+              plaidStreamId: stream.stream_id,
+              ...streamData,
+            },
+          });
+        }
+
+        // Remove streams Plaid no longer returns, but keep user-cancelled ones
+        const syncedAccountIds = [...accountMap.values()];
+        if (syncedAccountIds.length > 0 && syncedStreamIds.length > 0) {
+          await prisma.recurringStream.deleteMany({
+            where: {
+              accountId: { in: syncedAccountIds },
+              plaidStreamId: { notIn: syncedStreamIds },
+              cancelledByUser: false,
+            },
+          });
+        }
+
+        // --- Update per-transaction recurring flags ---
+        // These flags power the "Recurring" badges on the transactions page.
         const txnIdsByStream = new Map<string, { plaidTxnIds: string[]; frequency: string }>();
 
         for (const stream of allStreams) {

@@ -46,3 +46,16 @@ export function formatCurrency(amount: number, currency = "USD"): string {
     minimumFractionDigits: 2,
   }).format(amount);
 }
+
+// --- Frequency formatting ---
+
+export function formatFrequency(freq: string | null): string {
+  switch (freq) {
+    case "WEEKLY": return "Weekly";
+    case "BIWEEKLY": return "Biweekly";
+    case "SEMI_MONTHLY": return "Semi-monthly";
+    case "MONTHLY": return "Monthly";
+    case "ANNUALLY": return "Annual";
+    default: return "Recurring";
+  }
+}

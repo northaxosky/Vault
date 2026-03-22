@@ -57,6 +57,7 @@ model Account {
   transactions     Transaction[]        // an account has many transactions
   holdings         InvestmentHolding[]  // an investment account has many holdings
   snapshots        BalanceSnapshot[]    // daily balance history
+  recurringStreams  RecurringStream[]   // recurring transaction streams
 }
 
 model Transaction {
@@ -148,4 +149,30 @@ model Budget {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, category])            // one budget per category per user
+}
+
+model RecurringStream {
+  id                 String    @id @default(uuid())
+  accountId          String
+  plaidStreamId      String    @unique          // Plaid's stream_id
+  merchantName       String?                    // cleaned merchant name ("Netflix")
+  description        String                     // raw description from Plaid
+  category           String?                    // personal_finance_category.primary
+  subcategory        String?                    // personal_finance_category.detailed
+  firstDate          DateTime                   // when Plaid first detected this stream
+  lastDate           DateTime                   // most recent charge date
+  lastAmount         Decimal                    // most recent charge amount
+  averageAmount      Decimal                    // average charge amount
+  predictedNextDate  DateTime?                  // Plaid's prediction for next charge
+  frequency          String                     // "WEEKLY", "BIWEEKLY", "SEMI_MONTHLY", "MONTHLY", "ANNUALLY"
+  isActive           Boolean   @default(true)   // whether Plaid considers it active
+  status             String                     // "MATURE", "EARLY_DETECTION", "TOMBSTONED"
+  streamType         String    @default("OUTFLOW") // "INFLOW" or "OUTFLOW"
+  currency           String    @default("USD")
+  cancelledByUser    Boolean   @default(false)  // user-level override: marked as cancelled
+  cancelledAt        DateTime?                  // when the user marked it cancelled
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  account            Account   @relation(fields: [accountId], references: [id], onDelete: Cascade)
 }
