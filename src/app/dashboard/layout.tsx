@@ -70,7 +70,7 @@ export default async function DashboardLayout({
   return (
     <TooltipProvider>
       <div
-        className="bg-mesh flex min-h-screen flex-col bg-background lg:flex-row"
+        className="bg-mesh flex h-screen flex-col overflow-hidden bg-background lg:flex-row"
         data-accent-root
         style={accentStyle}
       >
