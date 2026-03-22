@@ -4,21 +4,12 @@ import { useMemo, useState } from "react";
 import {
   Search,
   X,
-  Film,
-  UtensilsCrossed,
-  ShoppingBag,
-  DollarSign,
-  Heart,
-  Home,
-  ArrowUpRight,
-  Car,
-  Plane,
-  CircleDot,
   ArrowLeftRight,
 } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -26,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { CATEGORY_CONFIG, getCategoryLabel, getCategoryIcon, formatCurrency } from "@/lib/categories";
 
 // --- Types ---
 
@@ -38,6 +30,8 @@ interface TransactionData {
   category: string | null;
   subcategory: string | null;
   pending: boolean;
+  isRecurring: boolean;
+  recurringFrequency: string | null;
   currency: string;
   accountName: string;
 }
@@ -46,41 +40,7 @@ interface TransactionsClientProps {
   transactions: TransactionData[];
 }
 
-// --- Category config ---
-// Maps Plaid's SCREAMING_SNAKE_CASE categories to display labels and icons.
-// Adding a new category is a one-line addition here.
-
-const CATEGORY_CONFIG: Record<string, { label: string; icon: LucideIcon }> = {
-  ENTERTAINMENT: { label: "Entertainment", icon: Film },
-  FOOD_AND_DRINK: { label: "Food & Drink", icon: UtensilsCrossed },
-  GENERAL_MERCHANDISE: { label: "General Merchandise", icon: ShoppingBag },
-  INCOME: { label: "Income", icon: DollarSign },
-  PERSONAL_CARE: { label: "Personal Care", icon: Heart },
-  RENT_AND_UTILITIES: { label: "Rent & Utilities", icon: Home },
-  TRANSFER_OUT: { label: "Transfer Out", icon: ArrowUpRight },
-  TRANSPORTATION: { label: "Transportation", icon: Car },
-  TRAVEL: { label: "Travel", icon: Plane },
-};
-
-function getCategoryLabel(category: string | null): string {
-  if (!category) return "Uncategorized";
-  return CATEGORY_CONFIG[category]?.label ?? category;
-}
-
-function getCategoryIcon(category: string | null): LucideIcon {
-  if (!category) return CircleDot;
-  return CATEGORY_CONFIG[category]?.icon ?? CircleDot;
-}
-
 // --- Helpers ---
-
-function formatCurrency(amount: number, currency = "USD"): string {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency,
-    minimumFractionDigits: 2,
-  }).format(amount);
-}
 
 /** Group transactions by date string (YYYY-MM-DD). Preserves insertion order. */
 function groupByDate(
@@ -111,6 +71,17 @@ function formatDateHeader(isoDateStr: string): string {
   });
 }
 
+function formatFrequency(freq: string | null): string {
+  switch (freq) {
+    case "WEEKLY": return "Weekly";
+    case "BIWEEKLY": return "Biweekly";
+    case "SEMI_MONTHLY": return "Semi-monthly";
+    case "MONTHLY": return "Monthly";
+    case "ANNUALLY": return "Annual";
+    default: return "Recurring";
+  }
+}
+
 // --- Transaction row ---
 
 function TransactionRow({ txn }: { txn: TransactionData }) {
@@ -135,6 +106,11 @@ function TransactionRow({ txn }: { txn: TransactionData }) {
           {txn.pending && (
             <Badge variant="secondary" className="shrink-0 text-xs">
               Pending
+            </Badge>
+          )}
+          {txn.isRecurring && (
+            <Badge variant="secondary" className="shrink-0 text-xs">
+              {formatFrequency(txn.recurringFrequency)}
             </Badge>
           )}
         </div>
@@ -168,8 +144,9 @@ export default function TransactionsClient({
 }: TransactionsClientProps) {
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [recurringOnly, setRecurringOnly] = useState(false);
 
-  // Filter transactions based on search text and category dropdown.
+  // Filter transactions based on search text, category, and recurring toggle.
   // useMemo avoids re-filtering on every render.
   const filtered = useMemo(() => {
     return transactions.filter((txn) => {
@@ -189,9 +166,12 @@ export default function TransactionsClient({
         return false;
       }
 
+      // Recurring filter
+      if (recurringOnly && !txn.isRecurring) return false;
+
       return true;
     });
-  }, [transactions, search, categoryFilter]);
+  }, [transactions, search, categoryFilter, recurringOnly]);
 
   // Group filtered transactions by date for section headers.
   const dateGroups = useMemo(() => {
@@ -267,6 +247,18 @@ export default function TransactionsClient({
               ))}
             </SelectContent>
           </Select>
+
+          {/* Recurring toggle */}
+          <div className="flex items-center gap-2">
+            <Switch
+              id="recurring-only"
+              checked={recurringOnly}
+              onCheckedChange={setRecurringOnly}
+            />
+            <Label htmlFor="recurring-only" className="text-sm text-muted-foreground whitespace-nowrap cursor-pointer">
+              Recurring only
+            </Label>
+          </div>
         </div>
       </div>
 

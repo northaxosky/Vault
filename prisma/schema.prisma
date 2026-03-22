@@ -22,6 +22,7 @@ model User {
 
   plaidItems   PlaidItem[]    // a user can have many linked banks
   settings     UserSettings?  // a user has one settings record
+  budgets      Budget[]       // per-category monthly spending limits
 }
 
 model PlaidItem {
@@ -55,24 +56,28 @@ model Account {
   plaidItem        PlaidItem            @relation(fields: [plaidItemId], references: [id], onDelete: Cascade)
   transactions     Transaction[]        // an account has many transactions
   holdings         InvestmentHolding[]  // an investment account has many holdings
+  snapshots        BalanceSnapshot[]    // daily balance history
 }
 
 model Transaction {
-  id                 String   @id @default(uuid())
-  accountId          String
-  plaidTransactionId String   @unique // Plaid's ID for this transaction
-  name               String            // description from the bank ("UBER EATS")
-  merchantName       String?           // cleaned-up merchant name ("Uber Eats")
-  amount             Decimal           // positive = money spent, negative = income
-  date               DateTime          // when the transaction occurred
-  category           String?           // primary category ("Food and Drink")
-  subcategory        String?           // more specific ("Restaurants")
-  pending            Boolean  @default(false) // true if not yet settled
-  currency           String   @default("USD")
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  id                  String   @id @default(uuid())
+  accountId           String
+  plaidTransactionId  String   @unique // Plaid's ID for this transaction
+  name                String            // description from the bank ("UBER EATS")
+  merchantName        String?           // cleaned-up merchant name ("Uber Eats")
+  amount              Decimal           // positive = money spent, negative = income
+  date                DateTime          // when the transaction occurred
+  category            String?           // primary category ("Food and Drink")
+  subcategory         String?           // more specific ("Restaurants")
+  pending             Boolean  @default(false) // true if not yet settled
+  isRecurring         Boolean  @default(false) // identified by Plaid as recurring
+  recurringStreamId   String?           // Plaid's stream_id grouping related recurring txns
+  recurringFrequency  String?           // "WEEKLY", "BIWEEKLY", "MONTHLY", "ANNUALLY", etc.
+  currency            String   @default("USD")
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 
-  account            Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  account             Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
 }
 
 model Security {
@@ -118,4 +123,29 @@ model UserSettings {
   updatedAt       DateTime @updatedAt
 
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model BalanceSnapshot {
+  id        String   @id @default(uuid())
+  accountId String
+  date      DateTime @db.Date             // just the date, no time component
+  balance   Decimal                       // account balance on this day
+  createdAt DateTime @default(now())
+
+  account   Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@unique([accountId, date])             // one snapshot per account per day
+}
+
+model Budget {
+  id        String   @id @default(uuid())
+  userId    String
+  category  String                        // matches Transaction.category ("FOOD_AND_DRINK", etc.)
+  amount    Decimal                       // monthly spending limit
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, category])            // one budget per category per user
 }

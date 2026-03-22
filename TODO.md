@@ -7,7 +7,7 @@
 
 ## In Progress
 
-- [ ] Balance snapshots for historical net worth / balance charts
+(none)
 
 ## Features — Core Pages
 
@@ -15,9 +15,11 @@
 - [x] **Transactions page** (`/dashboard/transactions`) — searchable/filterable transaction list with category icons and date grouping
 - [x] **Accounts page** (`/dashboard/accounts`) — accounts grouped by institution with type filtering, subtypes, balances, and transaction counts
 - [x] **Investments page** (`/dashboard/investments`) — holdings grouped by account, summary cards (portfolio value, cost basis, gain/loss), ticker badges, security types
+- [x] **Budgets page** (`/dashboard/budgets`) — per-category monthly budgets with progress bars, color-coded thresholds, CRUD management
 - [x] Dashboard: recent transactions section with category icons and "View all" link
 - [x] Dashboard: spending-by-category donut chart (Recharts)
-- [x] Dashboard: tabbed trend chart (spending/income/cash flow over time, AreaChart with time-range toggles)
+- [x] Dashboard: tabbed trend chart (spending/income/cash flow/net worth over time, AreaChart with time-range toggles)
+- [x] Dashboard: balance snapshots for historical net worth chart tab
 
 ## Features — Settings
 
@@ -36,8 +38,8 @@
 - [x] Plaid transaction sync (cursor-based, auto-sync on dashboard load, manual Sync button)
 - [x] Plaid sync after linking (PlaidLink triggers sync automatically)
 - [x] Plaid investment holdings sync (snapshot-based, upsert securities + holdings, stale cleanup)
-- [ ] Recurring transaction detection
-- [ ] Budget / spending categories
+- [x] Recurring transaction detection (Plaid streams, badges, "Recurring only" filter)
+- [x] Budget / spending categories (CRUD API, budgets page, sidebar nav)
 
 ## Improvements
 

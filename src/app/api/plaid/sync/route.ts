@@ -123,6 +123,9 @@ export async function POST() {
         // --- Update account balances from the sync response ---
         // The sync response includes fresh balance data for each account.
         if (accounts) {
+          const today = new Date();
+          today.setHours(0, 0, 0, 0); // strip time for a clean daily bucket
+
           for (const acct of accounts) {
             const ourAccountId = accountMap.get(acct.account_id);
             if (ourAccountId) {
@@ -133,6 +136,30 @@ export async function POST() {
                   availableBalance: acct.balances.available,
                 },
               });
+
+              // --- Capture daily balance snapshot ---
+              // One snapshot per account per day. If the user syncs multiple
+              // times today, we overwrite with the latest balance.
+              if (acct.balances.current != null) {
+                const existing = await prisma.balanceSnapshot.findFirst({
+                  where: { accountId: ourAccountId, date: today },
+                });
+
+                if (existing) {
+                  await prisma.balanceSnapshot.update({
+                    where: { id: existing.id },
+                    data: { balance: acct.balances.current },
+                  });
+                } else {
+                  await prisma.balanceSnapshot.create({
+                    data: {
+                      accountId: ourAccountId,
+                      date: today,
+                      balance: acct.balances.current,
+                    },
+                  });
+                }
+              }
             }
           }
         }
@@ -146,6 +173,66 @@ export async function POST() {
         where: { id: item.id },
         data: { cursor },
       });
+
+      // --- Recurring transaction detection ---
+      // Plaid identifies recurring streams (subscriptions, regular bills,
+      // paychecks) and tells us which transactions belong to each stream.
+      // This is a separate API call, not part of transactionsSync.
+      try {
+        const recurringResponse = await plaidClient.transactionsRecurringGet({
+          access_token: accessToken,
+          account_ids: [...accountMap.keys()],
+        });
+
+        const { inflow_streams, outflow_streams } = recurringResponse.data;
+        const allStreams = [...inflow_streams, ...outflow_streams];
+
+        // Build a map: plaidTransactionId -> { streamId, frequency }
+        // Group by stream so we can batch-update efficiently.
+        const txnIdsByStream = new Map<string, { plaidTxnIds: string[]; frequency: string }>();
+
+        for (const stream of allStreams) {
+          if (!stream.is_active) continue;
+          const key = stream.stream_id;
+          const entry = txnIdsByStream.get(key) ?? {
+            plaidTxnIds: [],
+            frequency: String(stream.frequency),
+          };
+          for (const txnId of stream.transaction_ids) {
+            entry.plaidTxnIds.push(txnId);
+          }
+          txnIdsByStream.set(key, entry);
+        }
+
+        if (txnIdsByStream.size > 0) {
+          // Reset: clear recurring flags for all transactions in these accounts
+          await prisma.transaction.updateMany({
+            where: {
+              accountId: { in: [...accountMap.values()] },
+            },
+            data: {
+              isRecurring: false,
+              recurringStreamId: null,
+              recurringFrequency: null,
+            },
+          });
+
+          // Set: mark identified transactions as recurring (one batch per stream)
+          for (const [streamId, { plaidTxnIds, frequency }] of txnIdsByStream) {
+            await prisma.transaction.updateMany({
+              where: { plaidTransactionId: { in: plaidTxnIds } },
+              data: {
+                isRecurring: true,
+                recurringStreamId: streamId,
+                recurringFrequency: frequency,
+              },
+            });
+          }
+        }
+      } catch {
+        // Expected to fail if the Plaid item doesn't support transactions
+        // or if the feature isn't available in sandbox. Silently skip.
+      }
 
       // --- Investment holdings sync ---
       // Unlike transactions, investments aren't cursor-based.

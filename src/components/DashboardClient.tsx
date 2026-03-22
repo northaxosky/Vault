@@ -10,20 +10,10 @@ import {
   PiggyBank,
   RefreshCw,
   ArrowRight,
-  Film,
-  UtensilsCrossed,
-  ShoppingBag,
-  DollarSign,
-  Heart,
-  Home,
-  ArrowUpRight,
-  Car,
-  Plane,
-  CircleDot,
-  type LucideIcon,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import PlaidLink from "@/components/PlaidLink";
+import { CATEGORY_CONFIG, getCategoryLabel, getCategoryIcon, formatCurrency } from "@/lib/categories";
 import { PieChart, Pie, Cell, Tooltip, AreaChart, Area, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from "recharts";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -63,6 +53,8 @@ interface TransactionData {
   category: string | null;
   subcategory: string | null;
   pending: boolean;
+  isRecurring: boolean;
+  recurringFrequency: string | null;
   currency: string;
   accountName: string;
 }
@@ -77,6 +69,7 @@ interface DailyTrendData {
   spending: number;
   income: number;
   cashFlow: number;
+  netWorth: number | null;
 }
 
 interface DashboardClientProps {
@@ -85,30 +78,6 @@ interface DashboardClientProps {
   recentTransactions: TransactionData[];
   categorySpending: CategorySpending[];
   dailyTrend: DailyTrendData[];
-}
-
-// --- Category config ---
-
-const CATEGORY_CONFIG: Record<string, { label: string; icon: LucideIcon }> = {
-  ENTERTAINMENT: { label: "Entertainment", icon: Film },
-  FOOD_AND_DRINK: { label: "Food & Drink", icon: UtensilsCrossed },
-  GENERAL_MERCHANDISE: { label: "General Merchandise", icon: ShoppingBag },
-  INCOME: { label: "Income", icon: DollarSign },
-  PERSONAL_CARE: { label: "Personal Care", icon: Heart },
-  RENT_AND_UTILITIES: { label: "Rent & Utilities", icon: Home },
-  TRANSFER_OUT: { label: "Transfer Out", icon: ArrowUpRight },
-  TRANSPORTATION: { label: "Transportation", icon: Car },
-  TRAVEL: { label: "Travel", icon: Plane },
-};
-
-function getCategoryLabel(category: string | null): string {
-  if (!category) return "Uncategorized";
-  return CATEGORY_CONFIG[category]?.label ?? category;
-}
-
-function getCategoryIcon(category: string | null): LucideIcon {
-  if (!category) return CircleDot;
-  return CATEGORY_CONFIG[category]?.icon ?? CircleDot;
 }
 
 // --- Chart colors ---
@@ -124,12 +93,13 @@ const CHART_COLORS = [
 
 // --- Trend chart config ---
 
-type TrendTab = "spending" | "income" | "cashFlow";
+type TrendTab = "spending" | "income" | "cashFlow" | "netWorth";
 
 const TREND_TABS: { value: TrendTab; label: string; color: string }[] = [
   { value: "spending", label: "Spending", color: "var(--chart-1)" },
   { value: "income", label: "Income", color: "var(--chart-2)" },
   { value: "cashFlow", label: "Cash Flow", color: "var(--chart-3)" },
+  { value: "netWorth", label: "Net Worth", color: "var(--chart-4)" },
 ];
 
 type TimeRange = "1W" | "1M" | "3M" | "6M";
@@ -141,14 +111,15 @@ const TIME_RANGES: { value: TimeRange; label: string; daysBack: number }[] = [
   { value: "6M", label: "6M", daysBack: 180 },
 ];
 
-// --- Helpers ---
-
-function formatCurrency(amount: number, currency = "USD"): string {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency,
-    minimumFractionDigits: 2,
-  }).format(amount);
+function formatFrequency(freq: string | null): string {
+  switch (freq) {
+    case "WEEKLY": return "Weekly";
+    case "BIWEEKLY": return "Biweekly";
+    case "SEMI_MONTHLY": return "Semi-monthly";
+    case "MONTHLY": return "Monthly";
+    case "ANNUALLY": return "Annual";
+    default: return "Recurring";
+  }
 }
 
 // --- Component ---
@@ -512,6 +483,11 @@ export default function DashboardClient({
                           {txn.pending && (
                             <Badge variant="secondary" className="ml-2 text-[10px] py-0">
                               Pending
+                            </Badge>
+                          )}
+                          {txn.isRecurring && (
+                            <Badge variant="secondary" className="ml-2 text-[10px] py-0">
+                              {formatFrequency(txn.recurringFrequency)}
                             </Badge>
                           )}
                         </p>

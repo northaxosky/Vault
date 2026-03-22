@@ -24,6 +24,8 @@ export default async function TransactionsPage() {
       category: true,
       subcategory: true,
       pending: true,
+      isRecurring: true,
+      recurringFrequency: true,
       currency: true,
       account: {
         select: { name: true },
@@ -44,6 +46,8 @@ export default async function TransactionsPage() {
     category: txn.category,
     subcategory: txn.subcategory,
     pending: txn.pending,
+    isRecurring: txn.isRecurring,
+    recurringFrequency: txn.recurringFrequency,
     currency: txn.currency,
     accountName: txn.account.name,
   }));

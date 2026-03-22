@@ -8,6 +8,7 @@ import {
   Landmark,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { formatCurrency } from "@/lib/categories";
 
 // --- Types ---
 
@@ -42,14 +43,6 @@ interface InvestmentsClientProps {
 }
 
 // --- Helpers ---
-
-function formatCurrency(amount: number, currency = "USD"): string {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency,
-    minimumFractionDigits: 2,
-  }).format(amount);
-}
 
 /** Format security type for display: "mutual fund" → "Mutual Fund" */
 function formatType(type: string): string {

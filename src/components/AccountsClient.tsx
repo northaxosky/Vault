@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { formatCurrency } from "@/lib/categories";
 
 // --- Types ---
 
@@ -50,14 +51,6 @@ function getTypeIcon(type: string): LucideIcon {
 }
 
 // --- Helpers ---
-
-function formatCurrency(amount: number, currency = "USD"): string {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency,
-    minimumFractionDigits: 2,
-  }).format(amount);
-}
 
 /** Format subtype for display: "money market" → "Money Market" */
 function formatSubtype(subtype: string): string {

@@ -96,6 +96,8 @@ export default async function DashboardPage() {
       category: true,
       subcategory: true,
       pending: true,
+      isRecurring: true,
+      recurringFrequency: true,
       currency: true,
       account: { select: { name: true } },
     },
@@ -112,6 +114,8 @@ export default async function DashboardPage() {
     category: txn.category,
     subcategory: txn.subcategory,
     pending: txn.pending,
+    isRecurring: txn.isRecurring,
+    recurringFrequency: txn.recurringFrequency,
     currency: txn.currency,
     accountName: txn.account.name,
   }));
@@ -187,13 +191,73 @@ export default async function DashboardPage() {
       cashFlow: Math.round((data.income - data.spending) * 100) / 100,
     }));
 
+  // Fetch balance snapshots for the last 6 months for the net worth chart.
+  // Aggregate by day: sum all account balances (credit accounts subtract).
+  const rawSnapshots = await prisma.balanceSnapshot.findMany({
+    where: {
+      account: { plaidItem: { userId: session!.user.id } },
+      date: { gte: sixMonthsAgo },
+    },
+    select: {
+      date: true,
+      balance: true,
+      account: { select: { type: true } },
+    },
+    orderBy: { date: "asc" },
+  });
+
+  const netWorthMap = new Map<string, number>();
+  for (const snap of rawSnapshots) {
+    const dayKey = snap.date.toISOString().slice(0, 10);
+    const current = netWorthMap.get(dayKey) ?? 0;
+    const balance = Number(snap.balance);
+    if (snap.account.type === "credit") {
+      netWorthMap.set(dayKey, current - balance);
+    } else {
+      netWorthMap.set(dayKey, current + balance);
+    }
+  }
+
+  // Merge net worth data into the dailyTrend array. Net worth snapshots
+  // may have days not in the transaction data (and vice versa), so we
+  // build a complete dataset from both sources.
+  const allDates = new Set([
+    ...dailyTrend.map((d) => d.date),
+    ...netWorthMap.keys(),
+  ]);
+
+  const mergedTrend = Array.from(allDates)
+    .sort()
+    .map((date) => {
+      const txnData = dailyTrend.find((d) => d.date === date);
+      return {
+        date,
+        spending: txnData?.spending ?? 0,
+        income: txnData?.income ?? 0,
+        cashFlow: txnData?.cashFlow ?? 0,
+        netWorth: netWorthMap.get(date) ?? null,
+      };
+    });
+
+  // Forward-fill null net worth values: if we have a snapshot on Monday
+  // but not Tuesday, Tuesday should show Monday's value (balance doesn't
+  // change just because no snapshot was taken).
+  let lastNetWorth: number | null = null;
+  for (const entry of mergedTrend) {
+    if (entry.netWorth !== null) {
+      lastNetWorth = entry.netWorth;
+    } else if (lastNetWorth !== null) {
+      entry.netWorth = lastNetWorth;
+    }
+  }
+
   return (
     <DashboardClient
       summary={{ netWorth, cashTotal, creditTotal, totalAccounts }}
       institutions={institutions}
       recentTransactions={recentTransactions}
       categorySpending={categorySpending}
-      dailyTrend={dailyTrend}
+      dailyTrend={mergedTrend}
     />
   );
 }
