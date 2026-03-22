@@ -319,25 +319,7 @@ export default function AnalyticsClient({
     });
   }, [monthlyByCategory]);
 
-  if (filteredTransactions.length === 0) {
-    return (
-      <div className="mx-auto max-w-7xl px-6 py-8">
-        <h1 className="text-2xl font-bold text-foreground">Analytics</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Spending trends and insights over time
-        </p>
-
-        <div className="mt-8 glass rounded-xl p-12 text-center">
-          <h2 className="text-xl font-semibold text-foreground">
-            No data available
-          </h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Try adjusting your filters or expanding the date range.
-          </p>
-        </div>
-      </div>
-    );
-  }
+  const hasData = filteredTransactions.length > 0;
 
   return (
     <div className="mx-auto max-w-7xl px-6 py-8">
@@ -418,8 +400,10 @@ export default function AnalyticsClient({
         </div>
       </div>
 
-      {/* Key Metrics */}
-      <div className="grid grid-cols-1 gap-4 mb-8 sm:grid-cols-2 lg:grid-cols-4">
+      {hasData ? (
+        <>
+          {/* Key Metrics */}
+          <div className="grid grid-cols-1 gap-4 mb-8 sm:grid-cols-2 lg:grid-cols-4">
         {/* Total Spending */}
         <div className="glass rounded-xl p-4">
           <p className="text-xs font-medium text-muted-foreground">
@@ -610,6 +594,17 @@ export default function AnalyticsClient({
           </div>
         )}
       </div>
+        </>
+      ) : (
+        <div className="glass rounded-xl p-12 text-center">
+          <h2 className="text-xl font-semibold text-foreground">
+            No data available
+          </h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Try adjusting your filters or expanding the date range.
+          </p>
+        </div>
+      )}
     </div>
   );
 }
