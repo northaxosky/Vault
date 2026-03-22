@@ -11,6 +11,8 @@ import {
   TrendingUp,
   Target,
   Repeat,
+  Goal,
+  LineChart,
   Settings,
   LogOut,
   Menu,
@@ -39,6 +41,8 @@ const navItems = [
   { href: "/dashboard/investments", label: "Investments", icon: TrendingUp },
   { href: "/dashboard/budgets", label: "Budgets", icon: Target },
   { href: "/dashboard/subscriptions", label: "Subscriptions", icon: Repeat },
+  { href: "/dashboard/goals", label: "Goals", icon: Goal },
+  { href: "/dashboard/insights", label: "Insights", icon: LineChart },
 ];
 
 interface DashboardSidebarProps {

@@ -23,6 +23,8 @@ model User {
   plaidItems   PlaidItem[]    // a user can have many linked banks
   settings     UserSettings?  // a user has one settings record
   budgets      Budget[]       // per-category monthly spending limits
+  savingsGoals SavingsGoal[]  // savings goals with targets and deadlines
+  debtAccounts DebtAccount[]  // debts being tracked for payoff
 }
 
 model PlaidItem {
@@ -58,6 +60,8 @@ model Account {
   holdings         InvestmentHolding[]  // an investment account has many holdings
   snapshots        BalanceSnapshot[]    // daily balance history
   recurringStreams  RecurringStream[]   // recurring transaction streams
+  savingsGoals     SavingsGoal[]      // goals linked to this account
+  debtAccounts     DebtAccount[]      // debts linked to this account
 }
 
 model Transaction {
@@ -175,4 +179,34 @@ model RecurringStream {
   updatedAt          DateTime  @updatedAt
 
   account            Account   @relation(fields: [accountId], references: [id], onDelete: Cascade)
+}
+
+model SavingsGoal {
+  id               String    @id @default(uuid())
+  userId           String
+  name             String                          // "Emergency Fund", "Vacation", etc.
+  targetAmount     Decimal                         // goal target
+  currentAmount    Decimal   @default(0)           // manually updated or synced from linked account
+  deadline         DateTime?                       // optional target date
+  linkedAccountId  String?                         // optional: link to a savings account
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  linkedAccount    Account?  @relation(fields: [linkedAccountId], references: [id], onDelete: SetNull)
+}
+
+model DebtAccount {
+  id               String    @id @default(uuid())
+  userId           String
+  name             String                          // "Chase Sapphire", "Student Loan"
+  balance          Decimal                         // current outstanding balance
+  interestRate     Decimal                         // annual APR percentage (e.g., 19.99)
+  minimumPayment   Decimal                         // monthly minimum payment
+  linkedAccountId  String?                         // optional: link to a credit/loan account
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  linkedAccount    Account?  @relation(fields: [linkedAccountId], references: [id], onDelete: SetNull)
 }

@@ -28,15 +28,15 @@
 
 ## Features — Goals & Planning
 
-- [ ] **Savings goals** — set target amounts with deadlines, link to an account, track progress with visual milestones
-- [ ] **Cash flow forecast** — project future balances based on recurring income vs recurring expenses
-- [ ] **Debt payoff tracker** — track credit/loan payoff with snowball vs avalanche strategy comparison
+- [x] **Savings goals** — set target amounts with deadlines, link to an account, track progress with visual milestones
+- [x] **Cash flow forecast** — project future balances based on recurring income vs recurring expenses
+- [x] **Debt payoff tracker** — track credit/loan payoff with snowball vs avalanche strategy comparison
 
 ## Features — Insights & Reports
 
-- [ ] **Monthly financial report** — auto-generated summary: income vs spending, top merchants, budget performance, net worth change
-- [ ] **Spending insights** — anomaly detection (unusual charges), month-over-month comparisons, "you spent X% more on Y this month"
-- [ ] **Year in review** — annual summary with top categories, biggest expenses, net worth growth
+- [x] **Monthly financial report** — auto-generated summary: income vs spending, top merchants, budget performance, net worth change
+- [x] **Spending insights** — anomaly detection (unusual charges), month-over-month comparisons, "you spent X% more on Y this month"
+- [x] **Year in review** — annual summary with top categories, biggest expenses, net worth growth
 
 ## Features — Settings
 
