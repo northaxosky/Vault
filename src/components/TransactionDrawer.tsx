@@ -2,12 +2,13 @@
 
 import { useState, useCallback } from "react";
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-} from "@/components/ui/sheet";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectTrigger,
@@ -115,24 +116,21 @@ export default function TransactionDrawer({
   }
 
   return (
-    <Sheet open={open} onOpenChange={handleOpen}>
-      <SheetContent
-        side="right"
-        className="sm:max-w-md flex flex-col"
-      >
-        <SheetHeader className="space-y-0.5 pr-8">
-          <SheetTitle className="text-lg">{displayName}</SheetTitle>
+    <Dialog open={open} onOpenChange={handleOpen}>
+      <DialogContent className="sm:max-w-lg max-h-[90vh]">
+        <DialogHeader className="space-y-1">
+          <DialogTitle className="text-lg">{displayName}</DialogTitle>
           {transaction.merchantName && transaction.merchantName !== transaction.name && (
-            <SheetDescription className="text-xs">
+            <DialogDescription className="text-xs">
               {transaction.name}
-            </SheetDescription>
+            </DialogDescription>
           )}
-        </SheetHeader>
+        </DialogHeader>
 
         {/* Scrollable body */}
-        <div className="flex-1 overflow-y-auto space-y-6 px-4">
+        <div className="max-h-[calc(90vh-180px)] overflow-y-auto space-y-6 pr-6">
           {/* Amount */}
-          <div className="text-center">
+          <div className="text-center py-2">
             <span
               className={`text-3xl font-bold tabular-nums ${
                 isIncome ? "text-emerald-400" : "text-foreground"
@@ -159,9 +157,6 @@ export default function TransactionDrawer({
                 </span>
               }
             />
-            {transaction.subcategory && (
-              <DetailRow label="Subcategory" value={transaction.subcategory} />
-            )}
 
             {/* Badges */}
             <div className="flex items-center gap-2 pt-1">
@@ -191,7 +186,15 @@ export default function TransactionDrawer({
               onValueChange={(val) => setSelectedCategory(val ?? USE_DEFAULT)}
             >
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="Use default category" />
+                <SelectValue>
+                  {selectedCategory === USE_DEFAULT ? (
+                    <span className="text-muted-foreground">
+                      Use default {transaction.category && `(${getCategoryLabel(transaction.category)})`}
+                    </span>
+                  ) : (
+                    CATEGORY_CONFIG[selectedCategory]?.label
+                  )}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value={USE_DEFAULT}>
@@ -229,11 +232,10 @@ export default function TransactionDrawer({
         </div>
 
         {/* Footer */}
-        <div className="border-t border-border p-4">
+        <DialogFooter>
           <Button
             onClick={handleSave}
             disabled={saving || !hasChanges}
-            className="w-full"
           >
             {saving ? (
               <>
@@ -247,9 +249,9 @@ export default function TransactionDrawer({
               </>
             )}
           </Button>
-        </div>
-      </SheetContent>
-    </Sheet>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
