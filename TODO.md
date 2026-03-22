@@ -21,7 +21,7 @@
 
 ## Features — Settings
 
-- [ ] Light mode theme toggle (currently placeholder "Coming soon")
+- [x] Light mode theme toggle (cookie-based, instant switch, no page reload)
 - [ ] Email notification sending (UI is built, backend delivery not wired)
 - [ ] Weekly digest email
 
@@ -45,7 +45,7 @@
 - [x] Charts with Recharts (spending by category on dashboard, trend area chart)
 - [x] Loading skeletons for all async dashboard pages
 - [x] Mobile responsive polish (flex-col layout, text truncation, shrink-0)
-- [ ] Middleware-based route protection (replace per-layout auth checks)
+- [x] Middleware-based route protection (replace per-layout auth checks)
 
 ## Known Issues
 

@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
+import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import DashboardSidebar from "@/components/DashboardSidebar";
@@ -9,12 +9,9 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // Auth check — all /dashboard/* routes require login
-  const session = await auth();
-
-  if (!session?.user) {
-    redirect("/login");
-  }
+  // Middleware already guarantees we're logged in — this just retrieves
+  // the session so we can read the user ID for data queries.
+  const session = (await auth())!;
 
   // Read the user's accent hue from their settings (if any).
   // This is applied as an inline style on the wrapper so the correct
@@ -26,6 +23,11 @@ export default async function DashboardLayout({
 
   const accentHue = settings?.accentHue ?? 195;
 
+  // Read theme to apply correct lightness for accent colors
+  const cookieStore = await cookies();
+  const theme = cookieStore.get("theme")?.value ?? "dark";
+  const isDark = theme === "dark";
+
   // We set ALL accent-derived CSS variables directly on this wrapper element
   // as pre-computed values rather than relying on var(--accent-hue).
   //
@@ -34,22 +36,36 @@ export default async function DashboardLayout({
   // which resolves --accent-hue at the <html> level (always 195, the default).
   // Setting --accent-hue on a child div does NOT cause --primary to recompute.
   //
-  // By setting the final computed values here, everything under this wrapper
-  // inherits the correct accent color — both bg-mesh gradients AND semantic
-  // tokens like --primary, --ring, etc.
-  const accentStyle = {
-    "--accent-hue": String(accentHue),
-    "--primary": `oklch(0.75 0.15 ${accentHue})`,
-    "--accent": `oklch(0.25 0.03 ${accentHue})`,
-    "--ring": `oklch(0.75 0.15 ${accentHue})`,
-    "--chart-1": `oklch(0.75 0.15 ${accentHue})`,
-    "--chart-2": `oklch(0.7 0.15 ${accentHue + 105})`,
-    "--chart-3": `oklch(0.72 0.15 ${accentHue - 30})`,
-    "--chart-4": `oklch(0.65 0.15 ${accentHue + 60})`,
-    "--chart-5": `oklch(0.7 0.15 ${accentHue + 145})`,
-    "--sidebar-primary": `oklch(0.75 0.15 ${accentHue})`,
-    "--sidebar-ring": `oklch(0.75 0.15 ${accentHue})`,
-  } as React.CSSProperties;
+  // Dark and light modes use different lightness values for the same accent hue.
+  const accentStyle = (isDark
+    ? {
+        "--accent-hue": String(accentHue),
+        "--primary": `oklch(0.75 0.15 ${accentHue})`,
+        "--primary-foreground": `oklch(0.13 0.015 260)`,
+        "--accent": `oklch(0.25 0.03 ${accentHue})`,
+        "--ring": `oklch(0.75 0.15 ${accentHue})`,
+        "--chart-1": `oklch(0.75 0.15 ${accentHue})`,
+        "--chart-2": `oklch(0.7 0.15 ${accentHue + 105})`,
+        "--chart-3": `oklch(0.72 0.15 ${accentHue - 30})`,
+        "--chart-4": `oklch(0.65 0.15 ${accentHue + 60})`,
+        "--chart-5": `oklch(0.7 0.15 ${accentHue + 145})`,
+        "--sidebar-primary": `oklch(0.75 0.15 ${accentHue})`,
+        "--sidebar-ring": `oklch(0.75 0.15 ${accentHue})`,
+      }
+    : {
+        "--accent-hue": String(accentHue),
+        "--primary": `oklch(0.5 0.15 ${accentHue})`,
+        "--primary-foreground": `oklch(0.98 0 0)`,
+        "--accent": `oklch(0.94 0.01 ${accentHue})`,
+        "--ring": `oklch(0.5 0.15 ${accentHue})`,
+        "--chart-1": `oklch(0.5 0.15 ${accentHue})`,
+        "--chart-2": `oklch(0.48 0.15 ${accentHue + 105})`,
+        "--chart-3": `oklch(0.5 0.15 ${accentHue - 30})`,
+        "--chart-4": `oklch(0.45 0.15 ${accentHue + 60})`,
+        "--chart-5": `oklch(0.48 0.15 ${accentHue + 145})`,
+        "--sidebar-primary": `oklch(0.5 0.15 ${accentHue})`,
+        "--sidebar-ring": `oklch(0.5 0.15 ${accentHue})`,
+      }) as React.CSSProperties;
 
   return (
     <TooltipProvider>

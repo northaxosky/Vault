@@ -75,7 +75,7 @@ function SidebarContent({
           alt=""
           width={24}
           height={24}
-          className="invert opacity-90"
+          className="dark:invert opacity-90"
         />
         <h1 className="text-xl font-bold text-primary">Vault</h1>
       </Link>
@@ -211,7 +211,7 @@ export default function DashboardSidebar({
           </SheetContent>
         </Sheet>
         <Link href="/dashboard" className="flex items-center gap-2">
-          <Image src="/VaultIcon.png" alt="" width={20} height={20} className="invert opacity-90" />
+          <Image src="/VaultIcon.png" alt="" width={20} height={20} className="dark:invert opacity-90" />
           <h1 className="text-lg font-bold text-primary">Vault</h1>
         </Link>
       </div>

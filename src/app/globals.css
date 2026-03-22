@@ -48,40 +48,41 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-/* ─── Light theme (unused for now, but kept for completeness) ─── */
+/* ─── Light theme ─── */
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
+  --accent-hue: 195;
+  --background: oklch(0.97 0.005 260);
+  --foreground: oklch(0.15 0.01 260);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  --card-foreground: oklch(0.15 0.01 260);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.15 0.01 260);
+  --primary: oklch(0.5 0.15 var(--accent-hue));
+  --primary-foreground: oklch(0.98 0 0);
+  --secondary: oklch(0.94 0.005 260);
+  --secondary-foreground: oklch(0.2 0.01 260);
+  --muted: oklch(0.94 0.005 260);
+  --muted-foreground: oklch(0.45 0.01 260);
+  --accent: oklch(0.94 0.01 var(--accent-hue));
+  --accent-foreground: oklch(0.2 0.01 260);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
+  --border: oklch(0.88 0.005 260);
+  --input: oklch(0.88 0.005 260);
+  --ring: oklch(0.5 0.15 var(--accent-hue));
+  --chart-1: oklch(0.5 0.15 var(--accent-hue));
+  --chart-2: oklch(0.48 0.15 calc(var(--accent-hue) + 105));
+  --chart-3: oklch(0.5 0.15 calc(var(--accent-hue) - 30));
+  --chart-4: oklch(0.45 0.15 calc(var(--accent-hue) + 60));
+  --chart-5: oklch(0.48 0.15 calc(var(--accent-hue) + 145));
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar: oklch(0.97 0.005 260);
+  --sidebar-foreground: oklch(0.15 0.01 260);
+  --sidebar-primary: oklch(0.5 0.15 var(--accent-hue));
+  --sidebar-primary-foreground: oklch(0.98 0 0);
+  --sidebar-accent: oklch(0.94 0.005 260);
+  --sidebar-accent-foreground: oklch(0.2 0.01 260);
+  --sidebar-border: oklch(0.88 0.005 260);
+  --sidebar-ring: oklch(0.5 0.15 var(--accent-hue));
 }
 
 /* ─── Dark Glass Theme ─── */
@@ -150,25 +151,49 @@
 
 /* ─── Glass utility classes ─── */
 /* Use these on any card/panel to get the frosted glass effect */
-.glass {
+.dark .glass {
   background: oklch(1 0 0 / 5%);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid oklch(1 0 0 / 10%);
 }
 
-.glass-strong {
+.dark .glass-strong {
   background: oklch(1 0 0 / 8%);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
   border: 1px solid oklch(1 0 0 / 12%);
 }
 
-.glass-subtle {
+.dark .glass-subtle {
   background: oklch(1 0 0 / 3%);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid oklch(1 0 0 / 6%);
+}
+
+/* Light mode glass — uses card background + subtle border */
+:root:not(.dark) .glass {
+  background: oklch(1 0 0 / 80%);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid oklch(0 0 0 / 8%);
+  box-shadow: 0 1px 3px oklch(0 0 0 / 5%);
+}
+
+:root:not(.dark) .glass-strong {
+  background: oklch(1 0 0 / 90%);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid oklch(0 0 0 / 10%);
+  box-shadow: 0 1px 4px oklch(0 0 0 / 8%);
+}
+
+:root:not(.dark) .glass-subtle {
+  background: oklch(1 0 0 / 60%);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid oklch(0 0 0 / 5%);
 }
 
 /* Glow effect for primary accent elements */
@@ -194,6 +219,14 @@
     radial-gradient(ellipse 700px 700px at 90% 20%, oklch(0.35 0.16 calc(var(--accent-hue) + 85) / 40%), transparent),
     radial-gradient(ellipse 600px 500px at 50% 85%, oklch(0.32 0.14 calc(var(--accent-hue) + 25) / 35%), transparent),
     radial-gradient(ellipse 400px 400px at 70% 60%, oklch(0.3 0.12 calc(var(--accent-hue) + 145) / 25%), transparent);
+}
+
+:root:not(.dark) .bg-mesh::before {
+  background:
+    radial-gradient(ellipse 800px 600px at 10% 15%, oklch(0.8 0.08 var(--accent-hue) / 25%), transparent),
+    radial-gradient(ellipse 700px 700px at 90% 20%, oklch(0.82 0.06 calc(var(--accent-hue) + 85) / 20%), transparent),
+    radial-gradient(ellipse 600px 500px at 50% 85%, oklch(0.78 0.06 calc(var(--accent-hue) + 25) / 18%), transparent),
+    radial-gradient(ellipse 400px 400px at 70% 60%, oklch(0.8 0.05 calc(var(--accent-hue) + 145) / 12%), transparent);
 }
 
 .bg-mesh > * {

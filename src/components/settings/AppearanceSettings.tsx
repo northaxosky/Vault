@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Separator } from "@/components/ui/separator";
 import AccentColorPicker from "./AccentColorPicker";
+import { Moon, Sun } from "lucide-react";
 
 interface AppearanceSettingsProps {
   settings: {
@@ -14,6 +15,25 @@ export default function AppearanceSettings({
   settings,
 }: AppearanceSettingsProps) {
   const [hue, setHue] = useState(settings.accentHue);
+
+  // Read current theme from cookie (falls back to "dark")
+  const [theme, setTheme] = useState(() => {
+    if (typeof document === "undefined") return "dark";
+    const match = document.cookie.match(/(?:^|;\s*)theme=(\w+)/);
+    return match?.[1] ?? "dark";
+  });
+
+  const toggleTheme = (newTheme: string) => {
+    setTheme(newTheme);
+    // Set cookie (expires in 1 year)
+    document.cookie = `theme=${newTheme};path=/;max-age=${60 * 60 * 24 * 365}`;
+    // Update DOM immediately — no page reload needed
+    if (newTheme === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  };
 
   return (
     <div className="glass rounded-xl p-6">
@@ -39,12 +59,32 @@ export default function AppearanceSettings({
         <div>
           <h4 className="text-sm font-medium text-foreground">Theme Mode</h4>
           <div className="mt-3 flex gap-3">
-            <div className="flex items-center gap-2 rounded-lg bg-primary/10 px-4 py-2 ring-2 ring-primary">
-              <span className="text-sm font-medium text-primary">Dark</span>
-            </div>
-            <div className="flex items-center gap-2 rounded-lg bg-secondary px-4 py-2 opacity-50">
-              <span className="text-sm text-muted-foreground">Light (Coming Never LMAO)</span>
-            </div>
+            <button
+              onClick={() => toggleTheme("dark")}
+              className={`flex items-center gap-2 rounded-lg px-4 py-2 transition-colors ${
+                theme === "dark"
+                  ? "bg-primary/10 ring-2 ring-primary"
+                  : "bg-secondary hover:bg-secondary/80"
+              }`}
+            >
+              <Moon className={`h-4 w-4 ${theme === "dark" ? "text-primary" : "text-muted-foreground"}`} />
+              <span className={`text-sm font-medium ${theme === "dark" ? "text-primary" : "text-muted-foreground"}`}>
+                Dark
+              </span>
+            </button>
+            <button
+              onClick={() => toggleTheme("light")}
+              className={`flex items-center gap-2 rounded-lg px-4 py-2 transition-colors ${
+                theme === "light"
+                  ? "bg-primary/10 ring-2 ring-primary"
+                  : "bg-secondary hover:bg-secondary/80"
+              }`}
+            >
+              <Sun className={`h-4 w-4 ${theme === "light" ? "text-primary" : "text-muted-foreground"}`} />
+              <span className={`text-sm font-medium ${theme === "light" ? "text-primary" : "text-muted-foreground"}`}>
+                Light
+              </span>
+            </button>
           </div>
         </div>
       </div>

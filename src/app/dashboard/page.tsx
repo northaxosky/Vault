@@ -100,7 +100,7 @@ export default async function DashboardPage() {
       account: { select: { name: true } },
     },
     orderBy: { date: "desc" },
-    take: 10,
+    take: 5,
   });
 
   const recentTransactions = rawRecentTxns.map((txn) => ({
