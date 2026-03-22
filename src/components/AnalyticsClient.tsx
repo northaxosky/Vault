@@ -288,12 +288,11 @@ export default function AnalyticsClient({
     };
   }, [filteredTransactions, monthlyByCategory, dateRange]);
 
-  // Prepare line chart data (monthly trend by top category)
+  // Prepare line chart data (monthly trend by top categories)
   const lineChartData = useMemo(() => {
     if (monthlyByCategory.length === 0) return [];
 
-    // Get the top 3 categories
-    const topCats = categoryTotals.slice(0, 3).map((c) => c.name);
+    const topCats = categoryTotals.map((c) => c.name);
 
     return monthlyByCategory.map((month) => {
       const monthKey = (month as any).month;
@@ -492,7 +491,7 @@ export default function AnalyticsClient({
                   formatter={(value: any) => formatCurrency(Number(value))}
                 />
                 <Legend />
-                {categoryTotals.slice(0, 3).map((cat, idx) => (
+                {categoryTotals.map((cat, idx) => (
                   <Line
                     key={cat.name}
                     type="monotone"
