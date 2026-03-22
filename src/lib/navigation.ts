@@ -7,6 +7,7 @@ import {
   Repeat,
   Goal,
   LineChart,
+  BarChart3,
   Settings,
   type LucideIcon,
 } from "lucide-react";
@@ -25,6 +26,7 @@ export const navItems: NavItem[] = [
   { href: "/dashboard/budgets", label: "Budgets", icon: Target },
   { href: "/dashboard/subscriptions", label: "Subscriptions", icon: Repeat },
   { href: "/dashboard/goals", label: "Goals", icon: Goal },
+  { href: "/dashboard/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/dashboard/insights", label: "Insights", icon: LineChart },
 ];
 
