@@ -243,6 +243,9 @@ export default function InvestmentsClient({
                           {holding.securityType && (
                             <span>{formatType(holding.securityType)}</span>
                           )}
+                          {holding.securityType && (
+                            <span className="text-border">|</span>
+                          )}
                           <span>
                             {holding.quantity.toLocaleString("en-US", {
                               maximumFractionDigits: 4,

@@ -117,7 +117,7 @@ function TransactionRow({ txn }: { txn: TransactionData }) {
   const Icon = getCategoryIcon(txn.category);
   const isIncome = txn.amount < 0;
   const displayAmount = Math.abs(txn.amount);
-  const displayName = txn.merchantName || txn.name;
+  const displayName = txn.merchantName || txn.name || getCategoryLabel(txn.category);
 
   return (
     <div className="flex items-center gap-3 px-4 py-3">

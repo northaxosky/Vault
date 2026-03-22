@@ -7,7 +7,7 @@
 
 ## In Progress
 
-- [ ] Dashboard: recent transactions section below linked accounts
+- [ ] Loading skeletons for async pages
 
 ## Features — Core Pages
 
@@ -15,8 +15,8 @@
 - [x] **Transactions page** (`/dashboard/transactions`) — searchable/filterable transaction list with category icons and date grouping
 - [x] **Accounts page** (`/dashboard/accounts`) — accounts grouped by institution with type filtering, subtypes, balances, and transaction counts
 - [x] **Investments page** (`/dashboard/investments`) — holdings grouped by account, summary cards (portfolio value, cost basis, gain/loss), ticker badges, security types
-- [ ] Dashboard: recent transactions section below linked accounts
-- [ ] Dashboard: spending-by-category chart (Recharts is installed)
+- [x] Dashboard: recent transactions section with category icons and "View all" link
+- [x] Dashboard: spending-by-category donut chart (Recharts)
 
 ## Features — Settings
 
@@ -41,7 +41,7 @@
 ## Improvements
 
 - [x] Favicon: accent-colored background with vault icon
-- [ ] Charts with Recharts (spending over time, category breakdown, net worth trend)
+- [x] Charts with Recharts (spending by category on dashboard)
 - [ ] Middleware-based route protection (replace per-layout auth checks)
 - [ ] Loading skeletons for async pages
 - [ ] Mobile responsive polish

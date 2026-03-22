@@ -82,10 +82,75 @@ export default async function DashboardPage() {
     })),
   }));
 
+  // Fetch the 10 most recent transactions for the "Recent Transactions" section.
+  const rawRecentTxns = await prisma.transaction.findMany({
+    where: {
+      account: { plaidItem: { userId: session!.user.id } },
+    },
+    select: {
+      id: true,
+      name: true,
+      merchantName: true,
+      amount: true,
+      date: true,
+      category: true,
+      subcategory: true,
+      pending: true,
+      currency: true,
+      account: { select: { name: true } },
+    },
+    orderBy: { date: "desc" },
+    take: 10,
+  });
+
+  const recentTransactions = rawRecentTxns.map((txn) => ({
+    id: txn.id,
+    name: txn.name,
+    merchantName: txn.merchantName,
+    amount: Number(txn.amount),
+    date: txn.date.toISOString(),
+    category: txn.category,
+    subcategory: txn.subcategory,
+    pending: txn.pending,
+    currency: txn.currency,
+    accountName: txn.account.name,
+  }));
+
+  // Fetch current month's spending grouped by category for the pie chart.
+  // Plaid convention: positive amount = money spent, negative = income.
+  // We only want spending (positive amounts) and group by category.
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  const rawMonthTxns = await prisma.transaction.findMany({
+    where: {
+      account: { plaidItem: { userId: session!.user.id } },
+      date: { gte: monthStart },
+      amount: { gt: 0 }, // spending only (Plaid: positive = outflow)
+    },
+    select: {
+      amount: true,
+      category: true,
+    },
+  });
+
+  // Group by category and sum amounts
+  const spendingMap = new Map<string, number>();
+  for (const txn of rawMonthTxns) {
+    const cat = txn.category || "OTHER";
+    spendingMap.set(cat, (spendingMap.get(cat) || 0) + Number(txn.amount));
+  }
+
+  const categorySpending = Array.from(spendingMap.entries())
+    .map(([category, total]) => ({ category, total }))
+    .sort((a, b) => b.total - a.total);
+
   return (
     <DashboardClient
       summary={{ netWorth, cashTotal, creditTotal, totalAccounts }}
       institutions={institutions}
+      recentTransactions={recentTransactions}
+      categorySpending={categorySpending}
     />
   );
 }

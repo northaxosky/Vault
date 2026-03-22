@@ -2,15 +2,29 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   Wallet,
   Landmark,
   CreditCard,
   PiggyBank,
   RefreshCw,
+  ArrowRight,
+  Film,
+  UtensilsCrossed,
+  ShoppingBag,
+  DollarSign,
+  Heart,
+  Home,
+  ArrowUpRight,
+  Car,
+  Plane,
+  CircleDot,
+  type LucideIcon,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import PlaidLink from "@/components/PlaidLink";
+import { PieChart, Pie, Cell, Tooltip } from "recharts";
 
 // --- Types ---
 
@@ -39,10 +53,65 @@ interface SummaryData {
   totalAccounts: number;
 }
 
+interface TransactionData {
+  id: string;
+  name: string;
+  merchantName: string | null;
+  amount: number;
+  date: string;
+  category: string | null;
+  subcategory: string | null;
+  pending: boolean;
+  currency: string;
+  accountName: string;
+}
+
+interface CategorySpending {
+  category: string;
+  total: number;
+}
+
 interface DashboardClientProps {
   summary: SummaryData;
   institutions: InstitutionData[];
+  recentTransactions: TransactionData[];
+  categorySpending: CategorySpending[];
 }
+
+// --- Category config ---
+
+const CATEGORY_CONFIG: Record<string, { label: string; icon: LucideIcon }> = {
+  ENTERTAINMENT: { label: "Entertainment", icon: Film },
+  FOOD_AND_DRINK: { label: "Food & Drink", icon: UtensilsCrossed },
+  GENERAL_MERCHANDISE: { label: "General Merchandise", icon: ShoppingBag },
+  INCOME: { label: "Income", icon: DollarSign },
+  PERSONAL_CARE: { label: "Personal Care", icon: Heart },
+  RENT_AND_UTILITIES: { label: "Rent & Utilities", icon: Home },
+  TRANSFER_OUT: { label: "Transfer Out", icon: ArrowUpRight },
+  TRANSPORTATION: { label: "Transportation", icon: Car },
+  TRAVEL: { label: "Travel", icon: Plane },
+};
+
+function getCategoryLabel(category: string | null): string {
+  if (!category) return "Uncategorized";
+  return CATEGORY_CONFIG[category]?.label ?? category;
+}
+
+function getCategoryIcon(category: string | null): LucideIcon {
+  if (!category) return CircleDot;
+  return CATEGORY_CONFIG[category]?.icon ?? CircleDot;
+}
+
+// --- Chart colors ---
+// Uses accent-derived chart CSS variables defined in the layout.
+
+const CHART_COLORS = [
+  "var(--chart-1)",
+  "var(--chart-2)",
+  "var(--chart-3)",
+  "var(--chart-4)",
+  "var(--chart-5)",
+];
 
 // --- Helpers ---
 
@@ -59,6 +128,8 @@ function formatCurrency(amount: number, currency = "USD"): string {
 export default function DashboardClient({
   summary,
   institutions,
+  recentTransactions,
+  categorySpending,
 }: DashboardClientProps) {
   const router = useRouter();
   const [syncing, setSyncing] = useState(false);
@@ -125,6 +196,14 @@ export default function DashboardClient({
       </div>
     );
   }
+
+  // Prepare chart data with labels for the tooltip
+  const chartData = categorySpending.map((item) => ({
+    name: getCategoryLabel(item.category),
+    value: item.total,
+  }));
+
+  const totalSpending = categorySpending.reduce((sum, c) => sum + c.total, 0);
 
   // Populated state — has linked accounts
   return (
@@ -205,6 +284,158 @@ export default function DashboardClient({
               <p className="text-xs text-muted-foreground">Amount owed</p>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Recent Transactions + Spending Chart — side by side on larger screens */}
+      <div className="mt-8 grid grid-cols-1 gap-4 lg:grid-cols-2">
+        {/* Recent Transactions */}
+        <div className="glass rounded-xl p-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-foreground">
+              Recent Transactions
+            </h2>
+            <Link
+              href="/dashboard/transactions"
+              className="flex items-center gap-1 text-sm text-primary hover:underline"
+            >
+              View all
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
+
+          {recentTransactions.length === 0 ? (
+            <p className="mt-6 text-center text-sm text-muted-foreground">
+              No recent transactions
+            </p>
+          ) : (
+            <div className="mt-4 divide-y divide-border">
+              {recentTransactions.map((txn) => {
+                const Icon = getCategoryIcon(txn.category);
+                const isIncome = txn.amount < 0;
+
+                return (
+                  <div
+                    key={txn.id}
+                    className="flex items-center justify-between py-3 first:pt-0 last:pb-0"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="rounded-lg bg-primary/10 p-2 shrink-0">
+                        <Icon className="h-4 w-4 text-primary" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate">
+                          {txn.merchantName || txn.name || getCategoryLabel(txn.category)}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {txn.accountName}
+                          {txn.pending && (
+                            <Badge variant="secondary" className="ml-2 text-[10px] py-0">
+                              Pending
+                            </Badge>
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                    <p
+                      className={`shrink-0 text-sm font-semibold tabular-nums ${
+                        isIncome ? "text-emerald-400" : "text-foreground"
+                      }`}
+                    >
+                      {isIncome ? "+" : ""}
+                      {formatCurrency(
+                        Math.abs(txn.amount),
+                        txn.currency
+                      )}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Spending by Category */}
+        <div className="glass rounded-xl p-6">
+          <div>
+            <h2 className="text-lg font-semibold text-foreground">
+              Spending by Category
+            </h2>
+            <p className="text-xs text-muted-foreground">This month</p>
+          </div>
+
+          {categorySpending.length === 0 ? (
+            <p className="mt-6 text-center text-sm text-muted-foreground">
+              No spending data this month
+            </p>
+          ) : (
+            <div className="mt-4 flex flex-col items-center gap-4 sm:flex-row">
+              {/* Pie chart */}
+              <div className="shrink-0">
+                <PieChart width={192} height={192}>
+                  <Pie
+                      data={chartData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={45}
+                      outerRadius={80}
+                      paddingAngle={2}
+                      dataKey="value"
+                      stroke="none"
+                    >
+                      {chartData.map((_, index) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={CHART_COLORS[index % CHART_COLORS.length]}
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      formatter={(value) => formatCurrency(Number(value))}
+                      contentStyle={{
+                        backgroundColor: "hsl(var(--card))",
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: "0.5rem",
+                        color: "hsl(var(--foreground))",
+                      }}
+                    />
+                  </PieChart>
+              </div>
+
+              {/* Legend */}
+              <div className="flex-1 space-y-2 w-full">
+                {categorySpending.map((item, index) => (
+                  <div
+                    key={item.category}
+                    className="flex items-center justify-between text-sm"
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div
+                        className="h-3 w-3 shrink-0 rounded-sm"
+                        style={{
+                          backgroundColor:
+                            CHART_COLORS[index % CHART_COLORS.length],
+                        }}
+                      />
+                      <span className="text-foreground truncate">
+                        {getCategoryLabel(item.category)}
+                      </span>
+                    </div>
+                    <div className="shrink-0 flex items-center gap-2 tabular-nums">
+                      <span className="text-muted-foreground text-xs">
+                        {totalSpending > 0
+                          ? `${((item.total / totalSpending) * 100).toFixed(0)}%`
+                          : ""}
+                      </span>
+                      <span className="font-medium text-foreground">
+                        {formatCurrency(item.total)}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
