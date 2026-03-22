@@ -10,6 +10,10 @@ import {
   CalendarDays,
   ChevronLeft,
   ChevronRight,
+  Edit,
+  Trash2,
+  Check,
+  AlertTriangle,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -21,12 +25,24 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
 import {
   formatCurrency,
   formatFrequency,
   getCategoryIcon,
   getCategoryLabel,
 } from "@/lib/categories";
+import { toast } from "sonner";
 
 // --- Types ---
 
@@ -184,23 +200,224 @@ function getStreamDatesInMonth(
   return dates;
 }
 
+// --- Edit Dialog ---
+
+function EditSubscriptionDialog({
+  stream,
+  open,
+  onOpenChange,
+  onSave,
+  saving,
+}: {
+  stream: StreamData | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSave: (id: string, data: any) => Promise<void>;
+  saving: boolean;
+}) {
+  const [name, setName] = useState("");
+  const [amount, setAmount] = useState("");
+  const [frequency, setFrequency] = useState("");
+
+  const handleOpen = (isOpen: boolean) => {
+    if (isOpen && stream) {
+      setName(stream.merchantName || "");
+      setAmount(stream.lastAmount.toString());
+      setFrequency(stream.frequency);
+    }
+    onOpenChange(isOpen);
+  };
+
+  const handleSave = async () => {
+    if (!stream) return;
+
+    try {
+      await onSave(stream.id, {
+        merchantName: name,
+        lastAmount: parseFloat(amount),
+        frequency,
+      });
+      handleOpen(false);
+    } catch {
+      // Error handled in parent
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={handleOpen}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Edit Subscription</DialogTitle>
+          <DialogDescription>
+            Update the name, amount, or frequency of this subscription
+          </DialogDescription>
+        </DialogHeader>
+
+        {stream && (
+          <div className="space-y-4">
+            {/* Custom Name */}
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1.5">
+                Custom Name
+              </label>
+              <Input
+                placeholder={stream.description}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Optional. Leave blank to use the merchant name.
+              </p>
+            </div>
+
+            {/* Expected Amount */}
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1.5">
+                Expected Amount
+              </label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                  $
+                </span>
+                <Input
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  className="pl-7"
+                />
+              </div>
+            </div>
+
+            {/* Frequency */}
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1.5">
+                Frequency
+              </label>
+              <Select value={frequency} onValueChange={(v) => setFrequency(v ?? "MONTHLY")}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="WEEKLY">Weekly</SelectItem>
+                  <SelectItem value="BIWEEKLY">Biweekly</SelectItem>
+                  <SelectItem value="SEMI_MONTHLY">Semi-monthly</SelectItem>
+                  <SelectItem value="MONTHLY">Monthly</SelectItem>
+                  <SelectItem value="ANNUALLY">Annually</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        )}
+
+        <DialogFooter>
+          <DialogClose render={<Button variant="outline" />}>
+            Cancel
+          </DialogClose>
+          <Button onClick={handleSave} disabled={saving}>
+            {saving ? "Saving..." : "Save Changes"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// --- Delete Confirmation Dialog ---
+
+function DeleteConfirmationDialog({
+  stream,
+  open,
+  onOpenChange,
+  onDelete,
+  deleting,
+}: {
+  stream: StreamData | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onDelete: (id: string) => Promise<void>;
+  deleting: boolean;
+}) {
+  const handleDelete = async () => {
+    if (!stream) return;
+    try {
+      await onDelete(stream.id);
+      onOpenChange(false);
+    } catch {
+      // Error handled in parent
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-red-400" />
+            Delete Subscription
+          </DialogTitle>
+          <DialogDescription>
+            Are you sure you want to delete this subscription? This action cannot
+            be undone.
+          </DialogDescription>
+        </DialogHeader>
+
+        {stream && (
+          <div className="rounded-lg bg-accent/30 p-3">
+            <p className="font-medium text-foreground">
+              {stream.merchantName || stream.description}
+            </p>
+            <p className="text-sm text-muted-foreground mt-1">
+              {formatCurrency(stream.lastAmount, stream.currency)} •{" "}
+              {formatFrequency(stream.frequency)}
+            </p>
+          </div>
+        )}
+
+        <DialogFooter>
+          <DialogClose render={<Button variant="outline" />}>
+            Cancel
+          </DialogClose>
+          <Button
+            variant="destructive"
+            onClick={handleDelete}
+            disabled={deleting}
+          >
+            {deleting ? "Deleting..." : "Delete"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // --- Subscription Row ---
 
 function SubscriptionRow({
   stream,
   onToggleCancel,
+  onEdit,
+  onDelete,
   saving,
 }: {
   stream: StreamData;
   onToggleCancel: (id: string, cancel: boolean) => void;
+  onEdit: (stream: StreamData) => void;
+  onDelete: (stream: StreamData) => void;
   saving: boolean;
 }) {
   const Icon = getCategoryIcon(stream.category);
   const displayName = stream.merchantName || stream.description;
   const status = getStreamStatus(stream);
+  const isCancelled = status === "cancelled";
 
   return (
-    <div className="glass rounded-xl p-4">
+    <div
+      className={`glass rounded-xl p-4 transition-opacity ${
+        isCancelled ? "opacity-60" : ""
+      }`}
+    >
       <div className="flex items-center gap-3">
         {/* Icon */}
         <div className="shrink-0 rounded-lg bg-primary/10 p-2.5">
@@ -210,7 +427,13 @@ function SubscriptionRow({
         {/* Name + details */}
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <p className="truncate text-sm font-medium text-foreground">
+            <p
+              className={`truncate text-sm font-medium ${
+                isCancelled
+                  ? "line-through text-muted-foreground"
+                  : "text-foreground"
+              }`}
+            >
               {displayName}
             </p>
             <Badge variant="secondary" className="shrink-0 text-xs">
@@ -246,11 +469,23 @@ function SubscriptionRow({
           </p>
         </div>
 
-        {/* Amount + action */}
-        <div className="flex shrink-0 items-center gap-3">
+        {/* Amount + actions */}
+        <div className="flex shrink-0 items-center gap-2">
           <p className="text-sm font-semibold tabular-nums text-foreground">
             {formatCurrency(stream.lastAmount, stream.currency)}
           </p>
+
+          {/* Edit button */}
+          <button
+            onClick={() => onEdit(stream)}
+            disabled={saving}
+            title="Edit"
+            className="rounded-lg p-2 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors disabled:opacity-50"
+          >
+            <Edit className="h-4 w-4" />
+          </button>
+
+          {/* Cancel/Reactivate button */}
           <button
             onClick={() =>
               onToggleCancel(stream.id, status !== "cancelled")
@@ -263,6 +498,16 @@ function SubscriptionRow({
             }`}
           >
             {status === "cancelled" ? "Reactivate" : "Cancel"}
+          </button>
+
+          {/* Delete button */}
+          <button
+            onClick={() => onDelete(stream)}
+            disabled={saving}
+            title="Delete"
+            className="rounded-lg p-2 text-muted-foreground hover:bg-accent hover:text-destructive transition-colors disabled:opacity-50"
+          >
+            <Trash2 className="h-4 w-4" />
           </button>
         </div>
       </div>
@@ -286,6 +531,12 @@ export default function SubscriptionsClient({
   const [calYear, setCalYear] = useState(now.getFullYear());
   const [calMonth, setCalMonth] = useState(now.getMonth());
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
+
+  // Edit/Delete dialog state
+  const [editingStream, setEditingStream] = useState<StreamData | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteStream, setDeleteStream] = useState<StreamData | null>(null);
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   // Only outflow streams (subscriptions/bills, not paychecks)
   const outflows = useMemo(
@@ -389,10 +640,75 @@ export default function SubscriptionsClient({
               : s
           )
         );
+        toast.success(
+          cancel
+            ? "Subscription cancelled"
+            : "Subscription reactivated"
+        );
         router.refresh();
+      } else {
+        toast.error("Failed to update subscription");
       }
     } catch {
-      // Silently fail — user can retry
+      toast.error("An error occurred");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  // Edit subscription
+  async function handleEdit(id: string, data: any) {
+    setSaving(true);
+    try {
+      const res = await fetch("/api/subscriptions", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, ...data }),
+      });
+      if (res.ok) {
+        const result = await res.json();
+        setStreams((prev) =>
+          prev.map((s) =>
+            s.id === id
+              ? {
+                  ...s,
+                  merchantName: result.stream.merchantName,
+                  lastAmount: result.stream.lastAmount,
+                  frequency: result.stream.frequency,
+                }
+              : s
+          )
+        );
+        toast.success("Subscription updated");
+        router.refresh();
+      } else {
+        toast.error("Failed to update subscription");
+      }
+    } catch {
+      toast.error("An error occurred");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  // Delete subscription
+  async function handleDelete(id: string) {
+    setSaving(true);
+    try {
+      const res = await fetch("/api/subscriptions", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      if (res.ok) {
+        setStreams((prev) => prev.filter((s) => s.id !== id));
+        toast.success("Subscription deleted");
+        router.refresh();
+      } else {
+        toast.error("Failed to delete subscription");
+      }
+    } catch {
+      toast.error("An error occurred");
     } finally {
       setSaving(false);
     }
@@ -552,205 +868,174 @@ export default function SubscriptionsClient({
             </div>
           </div>
 
-          {/* Results count */}
-          <p className="mt-4 text-sm text-muted-foreground">
-            Showing {filtered.length} of {outflows.length} subscription
-            {outflows.length !== 1 ? "s" : ""}
-          </p>
-
           {/* Subscription list */}
-          {filtered.length > 0 ? (
-            <div className="mt-4 space-y-3">
-              {filtered.map((stream) => (
+          <div className="mt-6 space-y-3">
+            {filtered.length > 0 ? (
+              filtered.map((stream) => (
                 <SubscriptionRow
                   key={stream.id}
                   stream={stream}
                   onToggleCancel={handleToggleCancel}
+                  onEdit={(s) => {
+                    setEditingStream(s);
+                    setEditOpen(true);
+                  }}
+                  onDelete={(s) => {
+                    setDeleteStream(s);
+                    setDeleteOpen(true);
+                  }}
                   saving={saving}
                 />
-              ))}
-            </div>
-          ) : (
-            <div className="mt-8 glass rounded-xl p-12 text-center">
-              <Search className="mx-auto h-12 w-12 text-muted-foreground" />
-              <h2 className="mt-4 text-xl font-semibold text-foreground">
-                No matching subscriptions
-              </h2>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Try adjusting your search or status filter.
-              </p>
-              <button
-                onClick={() => {
-                  setSearch("");
-                  setStatusFilter("all");
-                }}
-                className="mt-4 text-sm text-primary hover:underline"
-              >
-                Clear filters
-              </button>
-            </div>
-          )}
+              ))
+            ) : (
+              <div className="text-center py-8 glass rounded-xl">
+                <p className="text-muted-foreground">No subscriptions found</p>
+              </div>
+            )}
+          </div>
         </TabsContent>
 
         {/* --- Bill Calendar Tab --- */}
         <TabsContent value="calendar">
-          {/* Month navigation */}
-          <div className="mt-6 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <button
-                onClick={prevMonth}
-                className="rounded-lg p-2 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-              <h2 className="text-lg font-semibold text-foreground min-w-[180px] text-center">
-                {monthLabel}
-              </h2>
-              <button
-                onClick={nextMonth}
-                className="rounded-lg p-2 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </button>
-            </div>
-            <button
-              onClick={goToday}
-              className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-accent"
-            >
-              Today
-            </button>
-          </div>
-
-          {/* Calendar grid */}
-          <div className="mt-4 glass rounded-xl p-4">
-            {/* Day-of-week headers */}
-            <div className="grid grid-cols-7 gap-1 mb-1">
-              {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((dow) => (
-                <div
-                  key={dow}
-                  className="text-center text-xs font-medium text-muted-foreground py-2"
-                >
-                  {dow}
-                </div>
-              ))}
-            </div>
-
-            {/* Day cells */}
-            <div className="grid grid-cols-7 gap-1">
-              {calendarDays.map((day, i) => {
-                if (!day) {
-                  return <div key={`blank-${i}`} className="aspect-square" />;
-                }
-
-                const dayKey = day.toISOString().slice(0, 10);
-                const bills = calendarBills.get(dayKey) ?? [];
-                const hasBills = bills.length > 0;
-                const isToday =
-                  day.toDateString() === now.toDateString();
-                const isSelected =
-                  selectedDay?.toDateString() === day.toDateString();
-                const totalAmount = bills.reduce(
-                  (sum, s) => sum + s.lastAmount,
-                  0
-                );
-
-                return (
+          <div className="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-3">
+            {/* Calendar */}
+            <div className="lg:col-span-2 glass rounded-xl p-6">
+              {/* Month navigation */}
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="font-semibold text-foreground">{monthLabel}</h2>
+                <div className="flex items-center gap-2">
                   <button
-                    key={dayKey}
-                    onClick={() =>
-                      setSelectedDay(isSelected ? null : day)
-                    }
-                    className={`aspect-square rounded-lg p-1 text-left transition-colors ${
-                      isSelected
-                        ? "bg-primary/15 ring-1 ring-primary"
-                        : hasBills
-                        ? "hover:bg-accent"
-                        : "hover:bg-accent/50"
-                    } ${isToday ? "ring-1 ring-border" : ""}`}
+                    onClick={prevMonth}
+                    className="rounded-lg p-1.5 hover:bg-accent transition-colors"
                   >
-                    <span
-                      className={`block text-xs font-medium ${
-                        isToday
-                          ? "text-primary"
-                          : "text-foreground"
+                    <ChevronLeft className="h-5 w-5" />
+                  </button>
+                  <button
+                    onClick={goToday}
+                    className="rounded-lg px-3 py-1.5 text-xs font-medium hover:bg-accent transition-colors"
+                  >
+                    Today
+                  </button>
+                  <button
+                    onClick={nextMonth}
+                    className="rounded-lg p-1.5 hover:bg-accent transition-colors"
+                  >
+                    <ChevronRight className="h-5 w-5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Day headers */}
+              <div className="grid grid-cols-7 gap-1 mb-2">
+                {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
+                  <div
+                    key={d}
+                    className="text-center text-xs font-medium text-muted-foreground py-2"
+                  >
+                    {d}
+                  </div>
+                ))}
+              </div>
+
+              {/* Calendar grid */}
+              <div className="grid grid-cols-7 gap-1">
+                {calendarDays.map((day, idx) => {
+                  const isToday =
+                    day &&
+                    day.toDateString() === new Date().toDateString();
+                  const isSelected =
+                    day && selectedDay && day.toDateString() === selectedDay.toDateString();
+                  const bills = day
+                    ? (calendarBills.get(
+                        day.toISOString().slice(0, 10)
+                      ) ?? [])
+                    : [];
+
+                  return (
+                    <button
+                      key={idx}
+                      onClick={() => setSelectedDay(day)}
+                      className={`aspect-square rounded-lg p-1 text-xs transition-colors ${
+                        !day
+                          ? ""
+                          : isSelected
+                            ? "bg-primary text-primary-foreground"
+                            : isToday
+                              ? "border-2 border-primary"
+                              : "hover:bg-accent/50"
                       }`}
                     >
-                      {day.getDate()}
-                    </span>
-                    {hasBills && (
-                      <div className="mt-0.5">
-                        <div className="flex gap-0.5">
-                          {bills.slice(0, 3).map((_, idx) => (
-                            <div
-                              key={idx}
-                              className="h-1.5 w-1.5 rounded-full bg-primary"
-                            />
-                          ))}
-                          {bills.length > 3 && (
-                            <span className="text-[8px] text-muted-foreground">
-                              +{bills.length - 3}
-                            </span>
+                      {day && (
+                        <div>
+                          <div>{day.getDate()}</div>
+                          {bills.length > 0 && (
+                            <div className="text-[10px] text-muted-foreground">
+                              {bills.length}
+                            </div>
                           )}
                         </div>
-                        <p className="text-[10px] tabular-nums text-muted-foreground mt-0.5 hidden sm:block">
-                          {formatCurrency(totalAmount)}
-                        </p>
-                      </div>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Selected day detail */}
-          {selectedDay && (
-            <div className="mt-4 glass rounded-xl p-4">
-              <h3 className="text-sm font-medium text-foreground">
-                {selectedDay.toLocaleDateString("en-US", {
-                  weekday: "long",
-                  month: "long",
-                  day: "numeric",
+                      )}
+                    </button>
+                  );
                 })}
+              </div>
+            </div>
+
+            {/* Selected day details */}
+            <div className="glass rounded-xl p-6">
+              <h3 className="font-semibold text-foreground mb-4">
+                {selectedDay
+                  ? selectedDay.toLocaleDateString("en-US", {
+                      weekday: "long",
+                      month: "long",
+                      day: "numeric",
+                    })
+                  : "Select a day"}
               </h3>
-              {selectedDayBills.length === 0 ? (
-                <p className="mt-2 text-sm text-muted-foreground">
-                  No bills due on this day.
-                </p>
-              ) : (
-                <div className="mt-3 divide-y divide-border">
-                  {selectedDayBills.map((stream) => {
-                    const Icon = getCategoryIcon(stream.category);
-                    return (
-                      <div
-                        key={stream.id}
-                        className="flex items-center gap-3 py-2.5 first:pt-0 last:pb-0"
-                      >
-                        <div className="shrink-0 rounded-lg bg-primary/10 p-2">
-                          <Icon className="h-4 w-4 text-primary" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-medium text-foreground truncate">
-                            {stream.merchantName || stream.description}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {getCategoryLabel(stream.category)}
-                            <span className="mx-1.5">·</span>
-                            {formatFrequency(stream.frequency)}
-                          </p>
-                        </div>
-                        <p className="shrink-0 text-sm font-semibold tabular-nums text-foreground">
-                          {formatCurrency(stream.lastAmount, stream.currency)}
-                        </p>
-                      </div>
-                    );
-                  })}
+
+              {selectedDayBills.length > 0 ? (
+                <div className="space-y-3">
+                  {selectedDayBills.map((stream) => (
+                    <div
+                      key={stream.id}
+                      className="rounded-lg bg-accent/30 p-3"
+                    >
+                      <p className="font-medium text-foreground text-sm">
+                        {stream.merchantName || stream.description}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {formatCurrency(stream.lastAmount, stream.currency)}
+                      </p>
+                    </div>
+                  ))}
                 </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  {selectedDay ? "No bills scheduled" : ""}
+                </p>
               )}
             </div>
-          )}
+          </div>
         </TabsContent>
       </Tabs>
+
+      {/* Edit Dialog */}
+      <EditSubscriptionDialog
+        stream={editingStream}
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        onSave={handleEdit}
+        saving={saving}
+      />
+
+      {/* Delete Dialog */}
+      <DeleteConfirmationDialog
+        stream={deleteStream}
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        onDelete={handleDelete}
+        deleting={saving}
+      />
     </div>
   );
 }

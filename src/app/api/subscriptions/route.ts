@@ -58,7 +58,7 @@ export async function GET() {
   }
 }
 
-// --- PATCH: Toggle a subscription's cancelled status ---
+// --- PATCH: Update subscription (toggle cancelled, edit details, etc.) ---
 export async function PATCH(request: Request) {
   const session = await auth();
 
@@ -68,11 +68,11 @@ export async function PATCH(request: Request) {
 
   try {
     const body = await request.json();
-    const { id, cancelledByUser } = body;
+    const { id, cancelledByUser, merchantName, lastAmount, frequency } = body;
 
-    if (!id || typeof cancelledByUser !== "boolean") {
+    if (!id) {
       return NextResponse.json(
-        { error: "Invalid request body" },
+        { error: "ID is required" },
         { status: 400 }
       );
     }
@@ -94,17 +94,58 @@ export async function PATCH(request: Request) {
       );
     }
 
+    // Build update data from provided fields
+    const updateData: Record<string, unknown> = {};
+
+    if (typeof cancelledByUser === "boolean") {
+      updateData.cancelledByUser = cancelledByUser;
+      updateData.cancelledAt = cancelledByUser ? new Date() : null;
+    }
+
+    if (merchantName !== undefined && merchantName !== null) {
+      updateData.merchantName = merchantName || null;
+    }
+
+    if (lastAmount !== undefined && lastAmount !== null) {
+      updateData.lastAmount = parseFloat(lastAmount);
+    }
+
+    if (frequency !== undefined && frequency !== null) {
+      // Validate frequency
+      const validFrequencies = [
+        "WEEKLY",
+        "BIWEEKLY",
+        "SEMI_MONTHLY",
+        "MONTHLY",
+        "ANNUALLY",
+      ];
+      if (!validFrequencies.includes(frequency)) {
+        return NextResponse.json(
+          { error: "Invalid frequency" },
+          { status: 400 }
+        );
+      }
+      updateData.frequency = frequency;
+    }
+
+    if (Object.keys(updateData).length === 0) {
+      return NextResponse.json(
+        { error: "No fields to update" },
+        { status: 400 }
+      );
+    }
+
     const updated = await prisma.recurringStream.update({
       where: { id },
-      data: {
-        cancelledByUser,
-        cancelledAt: cancelledByUser ? new Date() : null,
-      },
+      data: updateData,
     });
 
     return NextResponse.json({
       stream: {
         id: updated.id,
+        merchantName: updated.merchantName,
+        lastAmount: Number(updated.lastAmount),
+        frequency: updated.frequency,
         cancelledByUser: updated.cancelledByUser,
         cancelledAt: updated.cancelledAt?.toISOString() ?? null,
       },
@@ -113,6 +154,59 @@ export async function PATCH(request: Request) {
     console.error("Error updating subscription:", error);
     return NextResponse.json(
       { error: "Failed to update subscription" },
+      { status: 500 }
+    );
+  }
+}
+
+// --- DELETE: Delete a subscription ---
+export async function DELETE(request: Request) {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    const body = await request.json();
+    const { id } = body;
+
+    if (!id) {
+      return NextResponse.json(
+        { error: "ID is required" },
+        { status: 400 }
+      );
+    }
+
+    // Verify ownership: stream -> account -> plaidItem -> userId
+    const stream = await prisma.recurringStream.findUnique({
+      where: { id },
+      include: {
+        account: {
+          include: { plaidItem: { select: { userId: true } } },
+        },
+      },
+    });
+
+    if (!stream || stream.account.plaidItem.userId !== session.user.id) {
+      return NextResponse.json(
+        { error: "Subscription not found" },
+        { status: 404 }
+      );
+    }
+
+    await prisma.recurringStream.delete({
+      where: { id },
+    });
+
+    return NextResponse.json({
+      message: "Subscription deleted successfully",
+      id,
+    });
+  } catch (error) {
+    console.error("Error deleting subscription:", error);
+    return NextResponse.json(
+      { error: "Failed to delete subscription" },
       { status: 500 }
     );
   }
