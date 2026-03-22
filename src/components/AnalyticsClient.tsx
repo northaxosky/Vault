@@ -508,38 +508,60 @@ export default function AnalyticsClient({
         )}
 
         {/* Pie Chart: Top 5 Categories */}
-        {categoryTotals.length > 0 && (
-          <div className="glass rounded-xl p-6">
-            <h2 className="text-lg font-semibold text-foreground mb-4">
-              Top Categories
-            </h2>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={categoryTotals}
-                  dataKey="value"
-                  nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={100}
-                  label={({ name, value }) =>
-                    `${name}: ${formatCurrency(value)}`
-                  }
-                >
-                  {categoryTotals.map((_, idx) => (
-                    <Cell
-                      key={`cell-${idx}`}
-                      fill={COLORS[idx % COLORS.length]}
-                    />
-                  ))}
-                </Pie>
-                <Tooltip
-                  formatter={(value: any) => formatCurrency(Number(value))}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-        )}
+        {categoryTotals.length > 0 && (() => {
+          const pieTotal = categoryTotals.reduce((sum, c) => sum + c.value, 0);
+          return (
+            <div className="glass rounded-xl p-6">
+              <h2 className="text-lg font-semibold text-foreground mb-4">
+                Top Categories
+              </h2>
+              <ResponsiveContainer width="100%" height={220}>
+                <PieChart>
+                  <Pie
+                    data={categoryTotals}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={90}
+                    innerRadius={50}
+                  >
+                    {categoryTotals.map((_, idx) => (
+                      <Cell
+                        key={`cell-${idx}`}
+                        fill={COLORS[idx % COLORS.length]}
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    formatter={(value: any) => formatCurrency(Number(value))}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="mt-4 space-y-2">
+                {categoryTotals.map((cat, idx) => (
+                  <div key={cat.name} className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span
+                        className="size-3 shrink-0 rounded-full"
+                        style={{ backgroundColor: COLORS[idx % COLORS.length] }}
+                      />
+                      <span className="truncate text-foreground">{cat.name}</span>
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0">
+                      <span className="text-muted-foreground">
+                        {pieTotal > 0 ? ((cat.value / pieTotal) * 100).toFixed(1) : 0}%
+                      </span>
+                      <span className="font-medium text-foreground">
+                        {formatCurrency(cat.value)}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Bar Chart: Monthly Spending */}
         {barChartData.length > 0 && (
