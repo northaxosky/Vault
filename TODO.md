@@ -21,6 +21,23 @@
 - [x] Dashboard: tabbed trend chart (spending/income/cash flow/net worth over time, AreaChart with time-range toggles)
 - [x] Dashboard: balance snapshots for historical net worth chart tab
 
+## Features — Subscriptions & Bills
+
+- [ ] **Subscriptions page** (`/dashboard/subscriptions`) — all detected recurring charges, total monthly cost, trend over time, mark as cancelled
+- [ ] **Bill calendar** — calendar view of upcoming recurring bills with projected dates and amounts
+
+## Features — Goals & Planning
+
+- [ ] **Savings goals** — set target amounts with deadlines, link to an account, track progress with visual milestones
+- [ ] **Cash flow forecast** — project future balances based on recurring income vs recurring expenses
+- [ ] **Debt payoff tracker** — track credit/loan payoff with snowball vs avalanche strategy comparison
+
+## Features — Insights & Reports
+
+- [ ] **Monthly financial report** — auto-generated summary: income vs spending, top merchants, budget performance, net worth change
+- [ ] **Spending insights** — anomaly detection (unusual charges), month-over-month comparisons, "you spent X% more on Y this month"
+- [ ] **Year in review** — annual summary with top categories, biggest expenses, net worth growth
+
 ## Features — Settings
 
 - [x] Light mode theme toggle (cookie-based, instant switch, no page reload)
@@ -41,6 +58,11 @@
 - [x] Recurring transaction detection (Plaid streams, badges, "Recurring only" filter)
 - [x] Budget / spending categories (CRUD API, budgets page, sidebar nav)
 
+## Features — Notifications
+
+- [ ] **Smart alerts** — large transaction warnings, budget overspend, unusual activity, low balance
+- [ ] Wire up existing email notification settings to actually send
+
 ## Improvements
 
 - [x] Favicon: accent-colored background with vault icon
@@ -48,6 +70,9 @@
 - [x] Loading skeletons for all async dashboard pages
 - [x] Mobile responsive polish (flex-col layout, text truncation, shrink-0)
 - [x] Middleware-based route protection (replace per-layout auth checks)
+- [ ] **Command palette** (Cmd+K / Ctrl+K) — global search across transactions, accounts, pages
+- [ ] **Transaction detail drawer** — click a transaction to see full details, add notes/tags, override category
+- [ ] **Custom transaction rules** — auto-rename or re-categorize transactions matching a pattern
 
 ## Known Issues
 
