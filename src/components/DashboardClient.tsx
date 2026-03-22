@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -24,7 +24,8 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import PlaidLink from "@/components/PlaidLink";
-import { PieChart, Pie, Cell, Tooltip } from "recharts";
+import { PieChart, Pie, Cell, Tooltip, AreaChart, Area, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from "recharts";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // --- Types ---
 
@@ -71,11 +72,19 @@ interface CategorySpending {
   total: number;
 }
 
+interface DailyTrendData {
+  date: string;
+  spending: number;
+  income: number;
+  cashFlow: number;
+}
+
 interface DashboardClientProps {
   summary: SummaryData;
   institutions: InstitutionData[];
   recentTransactions: TransactionData[];
   categorySpending: CategorySpending[];
+  dailyTrend: DailyTrendData[];
 }
 
 // --- Category config ---
@@ -113,6 +122,25 @@ const CHART_COLORS = [
   "var(--chart-5)",
 ];
 
+// --- Trend chart config ---
+
+type TrendTab = "spending" | "income" | "cashFlow";
+
+const TREND_TABS: { value: TrendTab; label: string; color: string }[] = [
+  { value: "spending", label: "Spending", color: "var(--chart-1)" },
+  { value: "income", label: "Income", color: "var(--chart-2)" },
+  { value: "cashFlow", label: "Cash Flow", color: "var(--chart-3)" },
+];
+
+type TimeRange = "1W" | "1M" | "3M" | "6M";
+
+const TIME_RANGES: { value: TimeRange; label: string; daysBack: number }[] = [
+  { value: "1W", label: "1W", daysBack: 7 },
+  { value: "1M", label: "1M", daysBack: 30 },
+  { value: "3M", label: "3M", daysBack: 90 },
+  { value: "6M", label: "6M", daysBack: 180 },
+];
+
 // --- Helpers ---
 
 function formatCurrency(amount: number, currency = "USD"): string {
@@ -130,10 +158,22 @@ export default function DashboardClient({
   institutions,
   recentTransactions,
   categorySpending,
+  dailyTrend,
 }: DashboardClientProps) {
   const router = useRouter();
   const [syncing, setSyncing] = useState(false);
   const syncInProgress = useRef(false);
+  const [activeTab, setActiveTab] = useState<TrendTab>("spending");
+  const [timeRange, setTimeRange] = useState<TimeRange>("1M");
+
+  // Filter trend data to the selected time range.
+  const filteredTrend = useMemo(() => {
+    const daysBack = TIME_RANGES.find((r) => r.value === timeRange)!.daysBack;
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - daysBack);
+    const cutoffStr = cutoff.toISOString().slice(0, 10);
+    return dailyTrend.filter((d) => d.date >= cutoffStr);
+  }, [dailyTrend, timeRange]);
 
   // Sync transactions from Plaid for all linked banks.
   // Uses a ref guard to prevent concurrent syncs (e.g., if auto-sync
@@ -209,7 +249,7 @@ export default function DashboardClient({
   return (
     <div className="mx-auto max-w-6xl px-6 py-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -284,6 +324,146 @@ export default function DashboardClient({
               <p className="text-xs text-muted-foreground">Amount owed</p>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Trend Chart */}
+      <div className="mt-6 glass rounded-xl p-6">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <Tabs
+            value={activeTab}
+            onValueChange={(v) => setActiveTab(v as TrendTab)}
+          >
+            <TabsList>
+              {TREND_TABS.map((tab) => (
+                <TabsTrigger key={tab.value} value={tab.value}>
+                  {tab.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
+
+          <div className="flex gap-1">
+            {TIME_RANGES.map((range) => (
+              <button
+                key={range.value}
+                onClick={() => setTimeRange(range.value)}
+                className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
+                  timeRange === range.value
+                    ? "bg-primary/15 text-primary"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {range.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-4">
+          {filteredTrend.length === 0 ? (
+            <p className="py-12 text-center text-sm text-muted-foreground">
+              No data for this time range
+            </p>
+          ) : (
+            <ResponsiveContainer width="100%" height={280}>
+              <AreaChart data={filteredTrend}>
+                <defs>
+                  {TREND_TABS.map((tab) => (
+                    <linearGradient
+                      key={tab.value}
+                      id={`gradient-${tab.value}`}
+                      x1="0"
+                      y1="0"
+                      x2="0"
+                      y2="1"
+                    >
+                      <stop
+                        offset="5%"
+                        stopColor={tab.color}
+                        stopOpacity={0.3}
+                      />
+                      <stop
+                        offset="95%"
+                        stopColor={tab.color}
+                        stopOpacity={0}
+                      />
+                    </linearGradient>
+                  ))}
+                </defs>
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="var(--border)"
+                  vertical={false}
+                />
+                <XAxis
+                  dataKey="date"
+                  tickFormatter={(val: string) => {
+                    const d = new Date(val + "T00:00:00");
+                    return d.toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                    });
+                  }}
+                  stroke="var(--foreground)"
+                  fontSize={12}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <YAxis
+                  tickFormatter={(val: number) => {
+                    const abs = Math.abs(val);
+                    const formatted =
+                      abs >= 1000
+                        ? `$${(abs / 1000).toFixed(1)}k`
+                        : `$${Math.round(abs)}`;
+                    return val < 0 ? `-${formatted}` : formatted;
+                  }}
+                  domain={[
+                    (dataMin: number) => Math.min(0, dataMin),
+                    (dataMax: number) => Math.max(0, dataMax),
+                  ]}
+                  stroke="var(--foreground)"
+                  fontSize={12}
+                  tickLine={false}
+                  axisLine={false}
+                  width={60}
+                />
+                <Tooltip
+                  formatter={(value) => [
+                    formatCurrency(Number(value)),
+                    TREND_TABS.find((t) => t.value === activeTab)!.label,
+                  ]}
+                  labelFormatter={(label) => {
+                    const d = new Date(String(label) + "T00:00:00");
+                    return d.toLocaleDateString("en-US", {
+                      month: "long",
+                      day: "numeric",
+                      year: "numeric",
+                    });
+                  }}
+                  contentStyle={{
+                    backgroundColor: "var(--card)",
+                    border: "1px solid var(--border)",
+                    borderRadius: "0.5rem",
+                    color: "var(--foreground)",
+                    fontSize: "0.875rem",
+                  }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey={activeTab}
+                  stroke={
+                    TREND_TABS.find((t) => t.value === activeTab)!.color
+                  }
+                  strokeWidth={2}
+                  fill={`url(#gradient-${activeTab})`}
+                  dot={false}
+                  activeDot={{ r: 4, strokeWidth: 0 }}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          )}
         </div>
       </div>
 
@@ -381,6 +561,7 @@ export default function DashboardClient({
                       outerRadius={80}
                       paddingAngle={2}
                       dataKey="value"
+                      nameKey="name"
                       stroke="none"
                     >
                       {chartData.map((_, index) => (
@@ -391,12 +572,16 @@ export default function DashboardClient({
                       ))}
                     </Pie>
                     <Tooltip
-                      formatter={(value) => formatCurrency(Number(value))}
+                      formatter={(value, name) => [
+                        formatCurrency(Number(value)),
+                        name,
+                      ]}
                       contentStyle={{
-                        backgroundColor: "hsl(var(--card))",
-                        border: "1px solid hsl(var(--border))",
+                        backgroundColor: "var(--card)",
+                        border: "1px solid var(--border)",
                         borderRadius: "0.5rem",
-                        color: "hsl(var(--foreground))",
+                        color: "var(--foreground)",
+                        fontSize: "0.875rem",
                       }}
                     />
                   </PieChart>
@@ -449,14 +634,14 @@ export default function DashboardClient({
           {institutions.map((institution) => (
             <div key={institution.id} className="glass rounded-xl p-6">
               {/* Institution header */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Landmark className="h-5 w-5 text-muted-foreground" />
-                  <h3 className="font-semibold text-foreground">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-3 min-w-0">
+                  <Landmark className="h-5 w-5 shrink-0 text-muted-foreground" />
+                  <h3 className="font-semibold text-foreground truncate">
                     {institution.institutionName || "Unknown Bank"}
                   </h3>
                 </div>
-                <span className="text-xs text-muted-foreground">
+                <span className="shrink-0 text-xs text-muted-foreground">
                   Linked{" "}
                   {new Date(institution.createdAt).toLocaleDateString(
                     "en-US",
@@ -473,10 +658,10 @@ export default function DashboardClient({
                 {institution.accounts.map((account) => (
                   <div
                     key={account.id}
-                    className="flex items-center justify-between"
+                    className="flex items-center justify-between gap-2"
                   >
-                    <div>
-                      <p className="text-sm font-medium text-foreground">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">
                         {account.name}
                       </p>
                       {account.officialName &&
@@ -486,7 +671,7 @@ export default function DashboardClient({
                           </p>
                         )}
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex shrink-0 items-center gap-3">
                       <Badge variant="secondary" className="text-xs">
                         {account.type}
                       </Badge>

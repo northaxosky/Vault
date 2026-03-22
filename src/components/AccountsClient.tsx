@@ -181,14 +181,14 @@ export default function AccountsClient({
         {filtered.map((institution) => (
           <div key={institution.id} className="glass rounded-xl p-6">
             {/* Institution header */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Landmark className="h-5 w-5 text-muted-foreground" />
-                <h3 className="font-semibold text-foreground">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-3 min-w-0">
+                <Landmark className="h-5 w-5 shrink-0 text-muted-foreground" />
+                <h3 className="font-semibold text-foreground truncate">
                   {institution.institutionName || "Unknown Bank"}
                 </h3>
               </div>
-              <span className="text-xs text-muted-foreground">
+              <span className="shrink-0 text-xs text-muted-foreground">
                 Linked{" "}
                 {new Date(institution.createdAt).toLocaleDateString("en-US", {
                   month: "short",
@@ -216,7 +216,7 @@ export default function AccountsClient({
                         <Icon className="h-4 w-4 text-primary" />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-sm font-medium text-foreground">
+                        <p className="text-sm font-medium text-foreground truncate">
                           {account.name}
                         </p>
                         {account.officialName &&

@@ -145,12 +145,55 @@ export default async function DashboardPage() {
     .map(([category, total]) => ({ category, total }))
     .sort((a, b) => b.total - a.total);
 
+  // Fetch transactions from the last 6 months for the trend chart.
+  // Lightweight query: only amount + date. We aggregate by day in
+  // TypeScript to produce spending, income, and cash-flow series.
+  const sixMonthsAgo = new Date();
+  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+  sixMonthsAgo.setHours(0, 0, 0, 0);
+
+  const rawTrendTxns = await prisma.transaction.findMany({
+    where: {
+      account: { plaidItem: { userId: session!.user.id } },
+      date: { gte: sixMonthsAgo },
+    },
+    select: {
+      amount: true,
+      date: true,
+    },
+    orderBy: { date: "asc" },
+  });
+
+  // Aggregate by day: spending (positive amounts) vs income (|negative|).
+  const dailyMap = new Map<string, { spending: number; income: number }>();
+  for (const txn of rawTrendTxns) {
+    const dayKey = txn.date.toISOString().slice(0, 10);
+    const entry = dailyMap.get(dayKey) || { spending: 0, income: 0 };
+    const amount = Number(txn.amount);
+    if (amount > 0) {
+      entry.spending += amount;
+    } else {
+      entry.income += Math.abs(amount);
+    }
+    dailyMap.set(dayKey, entry);
+  }
+
+  const dailyTrend = Array.from(dailyMap.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([date, data]) => ({
+      date,
+      spending: Math.round(data.spending * 100) / 100,
+      income: Math.round(data.income * 100) / 100,
+      cashFlow: Math.round((data.income - data.spending) * 100) / 100,
+    }));
+
   return (
     <DashboardClient
       summary={{ netWorth, cashTotal, creditTotal, totalAccounts }}
       institutions={institutions}
       recentTransactions={recentTransactions}
       categorySpending={categorySpending}
+      dailyTrend={dailyTrend}
     />
   );
 }

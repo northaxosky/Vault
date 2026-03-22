@@ -179,11 +179,11 @@ export default function InvestmentsClient({
           return (
             <div key={account.accountId} className="glass rounded-xl p-6">
               {/* Account header */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Landmark className="h-5 w-5 text-muted-foreground" />
-                  <div>
-                    <h3 className="font-semibold text-foreground">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-3 min-w-0">
+                  <Landmark className="h-5 w-5 shrink-0 text-muted-foreground" />
+                  <div className="min-w-0">
+                    <h3 className="font-semibold text-foreground truncate">
                       {account.accountName}
                     </h3>
                     {account.institutionName && (
@@ -193,7 +193,7 @@ export default function InvestmentsClient({
                     )}
                   </div>
                 </div>
-                <div className="text-right">
+                <div className="shrink-0 text-right">
                   <p className="text-sm font-semibold text-foreground tabular-nums">
                     {formatCurrency(accountValue)}
                   </p>

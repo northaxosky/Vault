@@ -7,7 +7,7 @@
 
 ## In Progress
 
-- [ ] Loading skeletons for async pages
+- [ ] Balance snapshots for historical net worth / balance charts
 
 ## Features — Core Pages
 
@@ -17,6 +17,7 @@
 - [x] **Investments page** (`/dashboard/investments`) — holdings grouped by account, summary cards (portfolio value, cost basis, gain/loss), ticker badges, security types
 - [x] Dashboard: recent transactions section with category icons and "View all" link
 - [x] Dashboard: spending-by-category donut chart (Recharts)
+- [x] Dashboard: tabbed trend chart (spending/income/cash flow over time, AreaChart with time-range toggles)
 
 ## Features — Settings
 
@@ -41,10 +42,10 @@
 ## Improvements
 
 - [x] Favicon: accent-colored background with vault icon
-- [x] Charts with Recharts (spending by category on dashboard)
+- [x] Charts with Recharts (spending by category on dashboard, trend area chart)
+- [x] Loading skeletons for all async dashboard pages
+- [x] Mobile responsive polish (flex-col layout, text truncation, shrink-0)
 - [ ] Middleware-based route protection (replace per-layout auth checks)
-- [ ] Loading skeletons for async pages
-- [ ] Mobile responsive polish
 
 ## Known Issues
 
@@ -53,4 +54,4 @@
 
 ---
 
-Last updated: 2026-03-21
+Last updated: 2026-03-22
