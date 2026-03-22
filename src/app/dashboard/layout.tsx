@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import DashboardSidebar from "@/components/DashboardSidebar";
+import CommandPalette from "@/components/CommandPalette";
 
 export default async function DashboardLayout({
   children,
@@ -84,6 +85,7 @@ export default async function DashboardLayout({
           {children}
         </main>
       </div>
+      <CommandPalette />
     </TooltipProvider>
   );
 }

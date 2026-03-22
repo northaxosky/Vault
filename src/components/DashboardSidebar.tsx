@@ -5,14 +5,6 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import {
-  LayoutDashboard,
-  Landmark,
-  ArrowLeftRight,
-  TrendingUp,
-  Target,
-  Repeat,
-  Goal,
-  LineChart,
   Settings,
   LogOut,
   Menu,
@@ -32,18 +24,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-
-// Navigation items — each becomes a link in the sidebar
-const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/dashboard/accounts", label: "Accounts", icon: Landmark },
-  { href: "/dashboard/transactions", label: "Transactions", icon: ArrowLeftRight },
-  { href: "/dashboard/investments", label: "Investments", icon: TrendingUp },
-  { href: "/dashboard/budgets", label: "Budgets", icon: Target },
-  { href: "/dashboard/subscriptions", label: "Subscriptions", icon: Repeat },
-  { href: "/dashboard/goals", label: "Goals", icon: Goal },
-  { href: "/dashboard/insights", label: "Insights", icon: LineChart },
-];
+import { navItems } from "@/lib/navigation";
 
 interface DashboardSidebarProps {
   userName: string | null;

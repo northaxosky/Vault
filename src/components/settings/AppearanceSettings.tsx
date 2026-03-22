@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Separator } from "@/components/ui/separator";
 import AccentColorPicker from "./AccentColorPicker";
 import { Moon, Sun } from "lucide-react";
+import { getCurrentTheme, setTheme as applyTheme } from "@/lib/theme";
 
 interface AppearanceSettingsProps {
   settings: {
@@ -16,23 +17,11 @@ export default function AppearanceSettings({
 }: AppearanceSettingsProps) {
   const [hue, setHue] = useState(settings.accentHue);
 
-  // Read current theme from cookie (falls back to "dark")
-  const [theme, setTheme] = useState(() => {
-    if (typeof document === "undefined") return "dark";
-    const match = document.cookie.match(/(?:^|;\s*)theme=(\w+)/);
-    return match?.[1] ?? "dark";
-  });
+  const [theme, setTheme] = useState(getCurrentTheme);
 
-  const toggleTheme = (newTheme: string) => {
+  const toggleTheme = (newTheme: "dark" | "light") => {
     setTheme(newTheme);
-    // Set cookie (expires in 1 year)
-    document.cookie = `theme=${newTheme};path=/;max-age=${60 * 60 * 24 * 365}`;
-    // Update DOM immediately — no page reload needed
-    if (newTheme === "dark") {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
+    applyTheme(newTheme);
   };
 
   return (

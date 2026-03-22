@@ -70,7 +70,7 @@
 - [x] Loading skeletons for all async dashboard pages
 - [x] Mobile responsive polish (flex-col layout, text truncation, shrink-0)
 - [x] Middleware-based route protection (replace per-layout auth checks)
-- [ ] **Command palette** (Cmd+K / Ctrl+K) — global search across transactions, accounts, pages
+- [x] **Command palette** (Cmd+K / Ctrl+K) — global search across transactions, accounts, pages
 - [ ] **Transaction detail drawer** — click a transaction to see full details, add notes/tags, override category
 - [ ] **Custom transaction rules** — auto-rename or re-categorize transactions matching a pattern
 
