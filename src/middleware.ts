@@ -1,16 +1,11 @@
-import { auth } from "@/lib/auth";
-import { NextResponse } from "next/server";
+import NextAuth from "next-auth";
+import authConfig from "@/lib/auth.config";
 
-export default auth((req) => {
-  const isLoggedIn = !!req.auth;
-  const isOnDashboard = req.nextUrl.pathname.startsWith("/dashboard");
+// Use the edge-safe auth config (no Prisma) for middleware.
+// Route protection logic lives in the `authorized` callback in auth.config.ts.
+export const { auth: middleware } = NextAuth(authConfig);
 
-  if (isOnDashboard && !isLoggedIn) {
-    return NextResponse.redirect(new URL("/login", req.nextUrl));
-  }
-
-  return NextResponse.next();
-});
+export default middleware;
 
 // Run middleware on dashboard routes only — skip API routes, static files, etc.
 export const config = {

@@ -2,20 +2,18 @@ import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { prisma } from "./prisma";
+import authConfig from "./auth.config";
 
+/**
+ * Full auth configuration — extends the edge-safe config with
+ * Prisma-dependent logic. Used by server components and API routes.
+ */
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  // Where to store session data. "jwt" = encrypted in a cookie
-  session: {
-    strategy: "jwt",
-  },
+  ...authConfig,
 
-  // Custom pages — tells NextAuth to use our login page instead of its default
-  pages: {
-    signIn: "/login",
-  },
-
+  // Override providers to include the authorize() callback,
+  // which needs Prisma for database lookups.
   providers: [
-    // Credentials provider: email + password login
     Credentials({
       name: "credentials",
       credentials: {
@@ -23,9 +21,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         password: { label: "Password", type: "password" },
       },
 
-      // This function runs when a user tries to log in.
-      // It receives the email/password they typed and must return
-      // a user object if valid, or null if invalid.
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
           return null;
@@ -51,7 +46,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return null;
         }
 
-        // Success — return the user object. NextAuth will put this in the session.
+        // Success — return the user object. NextAuth puts this in the session.
         return {
           id: user.id,
           name: user.name,
@@ -61,19 +56,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
 
-  // Callbacks let you customize what gets stored in the JWT and session.
   callbacks: {
-    // When a JWT is created or refreshed, attach the user's ID to it.
-    async jwt({ token, user }) {
-      if (user) {
-        token.id = user.id;
-      }
-      return token;
-    },
+    ...authConfig.callbacks,
 
     // When your code reads the session, pull fresh user data from the DB.
-    // This ensures name changes (like our capitalization fix) show up
-    // without needing to log out and back in.
+    // This ensures name changes show up without needing to log out and back in.
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string;
