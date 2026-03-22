@@ -87,6 +87,13 @@ function getMonthKey(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
 }
 
+// Helper: format month key (YYYY-MM) for chart display
+function formatMonthDisplay(monthKey: string): string {
+  const [year, month] = monthKey.split("-");
+  const date = new Date(parseInt(year), parseInt(month) - 1, 1);
+  return formatMonthLabel(date);
+}
+
 // Color palette for charts
 const COLORS = [
   "#3b82f6",
@@ -288,8 +295,9 @@ export default function AnalyticsClient({
     const topCats = categoryTotals.slice(0, 3).map((c) => c.name);
 
     return monthlyByCategory.map((month) => {
+      const monthKey = (month as any).month;
       const obj: Record<string, any> = {
-        month: (month as any).month,
+        month: formatMonthDisplay(monthKey),
       };
       for (const cat of topCats) {
         obj[cat] = (month as any)[cat] ?? 0;
@@ -305,7 +313,7 @@ export default function AnalyticsClient({
         .slice(1)
         .reduce((sum: number, val: any) => sum + (typeof val === "number" ? val : 0), 0);
       return {
-        month: (month as any).month,
+        month: formatMonthDisplay((month as any).month),
         total: Number(total.toFixed(2)),
       };
     });
