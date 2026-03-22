@@ -24,7 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { formatCurrency, CATEGORY_CONFIG } from "@/lib/categories";
+import { formatCurrency, CATEGORY_CONFIG, getCategoryLabel } from "@/lib/categories";
 
 interface Transaction {
   id: string;
@@ -48,9 +48,9 @@ interface AnalyticsClientProps {
 
 type DateRangeType = "3mo" | "6mo" | "1yr" | "all";
 
-// Helper: parse ISO date string and return a Date object at noon UTC
+// Helper: parse ISO date string (handles both "YYYY-MM-DD" and full ISO timestamps)
 function parseISODate(dateString: string): Date {
-  return new Date(dateString + "T12:00:00Z");
+  return new Date(dateString);
 }
 
 // Helper: get start date based on range type
@@ -163,7 +163,7 @@ export default function AnalyticsClient({
 
     for (const txn of filteredTransactions) {
       const monthKey = getMonthKey(parseISODate(txn.date));
-      const category = txn.category || "Uncategorized";
+      const category = getCategoryLabel(txn.category);
 
       if (!monthMap.has(monthKey)) {
         monthMap.set(monthKey, new Map());
@@ -192,7 +192,7 @@ export default function AnalyticsClient({
     const totals = new Map<string, number>();
 
     for (const txn of filteredTransactions) {
-      const category = txn.category || "Uncategorized";
+      const category = getCategoryLabel(txn.category);
       totals.set(category, (totals.get(category) ?? 0) + txn.amount);
     }
 
@@ -210,8 +210,9 @@ export default function AnalyticsClient({
     const merchants = new Map<string, number>();
 
     for (const txn of filteredTransactions) {
-      const name = txn.merchantName || txn.category || "Other";
-      merchants.set(name, (merchants.get(name) ?? 0) + txn.amount);
+      // Only include transactions with an actual merchant name
+      if (!txn.merchantName) continue;
+      merchants.set(txn.merchantName, (merchants.get(txn.merchantName) ?? 0) + txn.amount);
     }
 
     return Array.from(merchants.entries())
