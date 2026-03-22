@@ -27,6 +27,8 @@ export default async function TransactionsPage() {
       isRecurring: true,
       recurringFrequency: true,
       currency: true,
+      notes: true,
+      userCategory: true,
       account: {
         select: { name: true },
       },
@@ -50,6 +52,8 @@ export default async function TransactionsPage() {
     recurringFrequency: txn.recurringFrequency,
     currency: txn.currency,
     accountName: txn.account.name,
+    notes: txn.notes,
+    userCategory: txn.userCategory,
   }));
 
   return <TransactionsClient transactions={transactions} />;

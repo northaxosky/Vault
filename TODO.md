@@ -23,8 +23,9 @@
 
 ## Features — Subscriptions & Bills
 
-- [x] **Subscriptions page** (`/dashboard/subscriptions`) — all detected recurring charges, total monthly cost, trend over time, mark as cancelled
+- [x] **Subscriptions page** (`/dashboard/subscriptions`) — all detected recurring charges, total monthly cost, mark as cancelled
 - [x] **Bill calendar** — calendar view of upcoming recurring bills with projected dates and amounts
+- [x] **Recurring transaction management** — edit subscription details (custom name, expected amount, frequency override), delete subscriptions, visual indicators for paused subscriptions, toast notifications for all actions
 
 ## Features — Goals & Planning
 
@@ -37,6 +38,7 @@
 - [x] **Monthly financial report** — auto-generated summary: income vs spending, top merchants, budget performance, net worth change
 - [x] **Spending insights** — anomaly detection (unusual charges), month-over-month comparisons, "you spent X% more on Y this month"
 - [x] **Year in review** — annual summary with top categories, biggest expenses, net worth growth
+- [x] **Analytics dashboard** (`/dashboard/analytics`) — comprehensive spending trends with 24-month history, date range filters, category/account filters, charts (line trends, pie breakdown, monthly bar chart, top merchants), and key metrics (total, avg, MoM %, transaction count)
 
 ## Features — Settings
 
@@ -60,7 +62,7 @@
 
 ## Features — Notifications
 
-- [ ] **Smart alerts** — large transaction warnings, budget overspend, unusual activity, low balance
+- [x] **Smart alerts** — large transaction warnings, budget overspend, low balance (in-app bell + toast via sonner)
 - [ ] Wire up existing email notification settings to actually send
 
 ## Improvements
@@ -71,8 +73,8 @@
 - [x] Mobile responsive polish (flex-col layout, text truncation, shrink-0)
 - [x] Middleware-based route protection (replace per-layout auth checks)
 - [x] **Command palette** (Cmd+K / Ctrl+K) — global search across transactions, accounts, pages
-- [ ] **Transaction detail drawer** — click a transaction to see full details, add notes/tags, override category
-- [ ] **Custom transaction rules** — auto-rename or re-categorize transactions matching a pattern
+- [x] **Transaction detail drawer** — click a transaction to see full details, add notes, override category
+- [x] **Custom transaction rules** — auto-rename or re-categorize transactions matching a pattern (retroactive + during sync)
 
 ## Known Issues
 
@@ -81,4 +83,4 @@
 
 ---
 
-Last updated: 2026-03-22
+Last updated: 2026-03-22 (Analytics dashboard and recurring transaction management completed)

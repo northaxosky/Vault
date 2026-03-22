@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import DashboardSidebar from "@/components/DashboardSidebar";
 import CommandPalette from "@/components/CommandPalette";
+import { Toaster } from "sonner";
 
 export default async function DashboardLayout({
   children,
@@ -86,6 +87,7 @@ export default async function DashboardLayout({
         </main>
       </div>
       <CommandPalette />
+      <Toaster position="top-right" richColors closeButton />
     </TooltipProvider>
   );
 }

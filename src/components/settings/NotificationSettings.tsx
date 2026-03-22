@@ -65,7 +65,7 @@ export default function NotificationSettings({
         Configure alert preferences
       </p>
       <p className="mt-1 text-xs text-primary/70">
-        Note: Email delivery is a future feature. Settings are saved for when it ships.
+        In-app alerts are active. Email delivery is coming soon.
       </p>
 
       <Separator className="my-4" />

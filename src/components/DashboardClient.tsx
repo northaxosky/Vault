@@ -13,9 +13,11 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import PlaidLink from "@/components/PlaidLink";
-import { CATEGORY_CONFIG, getCategoryLabel, getCategoryIcon, formatCurrency, formatFrequency } from "@/lib/categories";
+import { CATEGORY_CONFIG, getCategoryLabel, getCategoryIcon, getEffectiveCategory, formatCurrency, formatFrequency } from "@/lib/categories";
 import { PieChart, Pie, Cell, Tooltip, AreaChart, Area, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from "recharts";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import type { TransactionData } from "@/lib/types";
+import TransactionDrawer from "@/components/TransactionDrawer";
 
 // --- Types ---
 
@@ -42,21 +44,6 @@ interface SummaryData {
   cashTotal: number;
   creditTotal: number;
   totalAccounts: number;
-}
-
-interface TransactionData {
-  id: string;
-  name: string;
-  merchantName: string | null;
-  amount: number;
-  date: string;
-  category: string | null;
-  subcategory: string | null;
-  pending: boolean;
-  isRecurring: boolean;
-  recurringFrequency: string | null;
-  currency: string;
-  accountName: string;
 }
 
 interface CategorySpending {
@@ -125,6 +112,13 @@ export default function DashboardClient({
   const syncInProgress = useRef(false);
   const [activeTab, setActiveTab] = useState<TrendTab>("spending");
   const [timeRange, setTimeRange] = useState<TimeRange>("1M");
+  const [selectedTxn, setSelectedTxn] = useState<TransactionData | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  const handleRowClick = useCallback((txn: TransactionData) => {
+    setSelectedTxn(txn);
+    setDrawerOpen(true);
+  }, []);
 
   // Filter trend data to the selected time range.
   const filteredTrend = useMemo(() => {
@@ -451,13 +445,15 @@ export default function DashboardClient({
           ) : (
             <div className="mt-4 divide-y divide-border">
               {recentTransactions.map((txn) => {
-                const Icon = getCategoryIcon(txn.category);
+                const effectiveCat = getEffectiveCategory(txn.userCategory, txn.category);
+                const Icon = getCategoryIcon(effectiveCat);
                 const isIncome = txn.amount < 0;
 
                 return (
                   <div
                     key={txn.id}
-                    className="flex items-center justify-between py-3 first:pt-0 last:pb-0"
+                    className="flex items-center justify-between py-3 first:pt-0 last:pb-0 cursor-pointer transition-colors hover:bg-accent/50 rounded-lg px-2 -mx-2"
+                    onClick={() => handleRowClick(txn)}
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="rounded-lg bg-primary/10 p-2 shrink-0">
@@ -465,7 +461,7 @@ export default function DashboardClient({
                       </div>
                       <div className="min-w-0">
                         <p className="text-sm font-medium text-foreground truncate">
-                          {txn.merchantName || txn.name || getCategoryLabel(txn.category)}
+                          {txn.merchantName || txn.name || getCategoryLabel(effectiveCat)}
                         </p>
                         <p className="text-xs text-muted-foreground">
                           {txn.accountName}
@@ -656,6 +652,19 @@ export default function DashboardClient({
           ))}
         </div>
       </div>
+
+      {/* Transaction detail drawer */}
+      <TransactionDrawer
+        transaction={selectedTxn}
+        open={drawerOpen}
+        onOpenChange={setDrawerOpen}
+        onUpdate={(id, updates) => {
+          // Update the selected transaction in the drawer
+          setSelectedTxn((prev) =>
+            prev && prev.id === id ? { ...prev, ...updates } : prev
+          );
+        }}
+      />
     </div>
   );
 }

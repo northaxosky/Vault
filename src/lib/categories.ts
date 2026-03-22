@@ -59,3 +59,13 @@ export function formatFrequency(freq: string | null): string {
     default: return "Recurring";
   }
 }
+
+// --- Effective category ---
+
+/** Returns the user's category override if set, otherwise the Plaid category. */
+export function getEffectiveCategory(
+  userCategory: string | null | undefined,
+  plaidCategory: string | null
+): string | null {
+  return userCategory || plaidCategory;
+}

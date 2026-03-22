@@ -29,6 +29,23 @@ export async function POST() {
     let totalModified = 0;
     let totalRemoved = 0;
 
+    // Fetch user's transaction rules once for applying during sync
+    const rules = await prisma.transactionRule.findMany({
+      where: { userId: session.user.id },
+    });
+
+    /** Apply matching rules to a transaction data object (mutates in-place). */
+    function applyRules(txn: { name: string; merchantName: string | null; userCategory?: string | null }) {
+      for (const rule of rules) {
+        const fieldValue = rule.matchField === "merchantName" ? txn.merchantName : txn.name;
+        if (fieldValue && fieldValue.toLowerCase().includes(rule.matchPattern.toLowerCase())) {
+          if (rule.overrideName) txn.name = rule.overrideName;
+          if (rule.overrideCategory) txn.userCategory = rule.overrideCategory;
+          break; // first match wins
+        }
+      }
+    }
+
     // Process each linked bank sequentially.
     // A typical user has 1-3 banks, so sequential is fine.
     for (const item of plaidItems) {
@@ -74,6 +91,11 @@ export async function POST() {
               currency: txn.iso_currency_code || "USD",
             }));
 
+          // Apply user's transaction rules to new transactions
+          for (const txn of mappedAdded) {
+            applyRules(txn);
+          }
+
           await prisma.transaction.createMany({
             data: mappedAdded,
             skipDuplicates: true, // safe if we re-process a transaction
@@ -99,6 +121,9 @@ export async function POST() {
             pending: txn.pending,
             currency: txn.iso_currency_code || "USD",
           };
+
+          // Apply user's transaction rules to modified transactions
+          applyRules(txnData);
 
           await prisma.transaction.upsert({
             where: { plaidTransactionId: txn.transaction_id },
@@ -389,6 +414,153 @@ export async function POST() {
       } catch {
         // Expected for items without investment access — silently skip
       }
+    }
+
+    // --- Smart Alert Generation ---
+    // Check user settings for alert thresholds and generate alerts for:
+    // 1. Large transactions (amount > spendingAlert threshold)
+    // 2. Low balance accounts (balance < lowBalanceAlert threshold)
+    // 3. Budget overspend (monthly spending > budget amount)
+    try {
+      const userSettings = await prisma.userSettings.findUnique({
+        where: { userId: session.user.id },
+        select: { spendingAlert: true, lowBalanceAlert: true, emailAlerts: true },
+      });
+
+      if (userSettings?.emailAlerts) {
+        const alertsToCreate: {
+          userId: string;
+          type: string;
+          title: string;
+          message: string;
+          transactionId?: string;
+        }[] = [];
+
+        // 1. LARGE_TRANSACTION: check newly added transactions
+        if (userSettings.spendingAlert && totalAdded > 0) {
+          const threshold = Number(userSettings.spendingAlert);
+          // Get recent transactions added in this sync (last 10 minutes)
+          const recentCutoff = new Date(Date.now() - 10 * 60 * 1000);
+          const largeTransactions = await prisma.transaction.findMany({
+            where: {
+              account: { plaidItem: { userId: session.user.id } },
+              amount: { gte: threshold },
+              createdAt: { gte: recentCutoff },
+            },
+            select: { id: true, name: true, merchantName: true, amount: true, currency: true },
+            take: 10,
+          });
+
+          for (const txn of largeTransactions) {
+            // Avoid duplicates: check if alert already exists for this transaction
+            const exists = await prisma.alert.findFirst({
+              where: { userId: session.user.id, type: "LARGE_TRANSACTION", transactionId: txn.id },
+            });
+            if (!exists) {
+              const displayName = txn.merchantName || txn.name;
+              alertsToCreate.push({
+                userId: session.user.id,
+                type: "LARGE_TRANSACTION",
+                title: "Large transaction detected",
+                message: `${displayName}: $${Number(txn.amount).toFixed(2)} ${txn.currency}`,
+                transactionId: txn.id,
+              });
+            }
+          }
+        }
+
+        // 2. LOW_BALANCE: check all accounts
+        if (userSettings.lowBalanceAlert) {
+          const threshold = Number(userSettings.lowBalanceAlert);
+          const lowAccounts = await prisma.account.findMany({
+            where: {
+              plaidItem: { userId: session.user.id },
+              type: { in: ["depository"] },
+              currentBalance: { lt: threshold },
+            },
+            select: { id: true, name: true, currentBalance: true, currency: true },
+          });
+
+          for (const acc of lowAccounts) {
+            // One alert per account per day
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const exists = await prisma.alert.findFirst({
+              where: {
+                userId: session.user.id,
+                type: "LOW_BALANCE",
+                message: { contains: acc.name },
+                createdAt: { gte: today },
+              },
+            });
+            if (!exists) {
+              alertsToCreate.push({
+                userId: session.user.id,
+                type: "LOW_BALANCE",
+                title: "Low balance warning",
+                message: `${acc.name} balance is $${Number(acc.currentBalance).toFixed(2)} ${acc.currency}`,
+              });
+            }
+          }
+        }
+
+        // 3. BUDGET_OVERSPEND: check each budget this month
+        const budgets = await prisma.budget.findMany({
+          where: { userId: session.user.id },
+        });
+
+        if (budgets.length > 0) {
+          const monthStart = new Date();
+          monthStart.setDate(1);
+          monthStart.setHours(0, 0, 0, 0);
+
+          for (const budget of budgets) {
+            const spending = await prisma.transaction.aggregate({
+              where: {
+                account: { plaidItem: { userId: session.user.id } },
+                date: { gte: monthStart },
+                amount: { gt: 0 }, // only expenses
+                OR: [
+                  { userCategory: budget.category },
+                  { userCategory: null, category: budget.category },
+                ],
+              },
+              _sum: { amount: true },
+            });
+
+            const totalSpent = Number(spending._sum.amount ?? 0);
+            const limit = Number(budget.amount);
+
+            if (totalSpent > limit) {
+              // One alert per budget per month
+              const exists = await prisma.alert.findFirst({
+                where: {
+                  userId: session.user.id,
+                  type: "BUDGET_OVERSPEND",
+                  message: { contains: budget.category },
+                  createdAt: { gte: monthStart },
+                },
+              });
+              if (!exists) {
+                alertsToCreate.push({
+                  userId: session.user.id,
+                  type: "BUDGET_OVERSPEND",
+                  title: "Budget exceeded",
+                  message: `${budget.category}: $${totalSpent.toFixed(2)} spent of $${limit.toFixed(2)} budget`,
+                });
+              }
+            }
+          }
+        }
+
+        // Batch create all alerts
+        if (alertsToCreate.length > 0) {
+          await prisma.alert.createMany({ data: alertsToCreate });
+        }
+      }
+    } catch (alertError) {
+      // Alert generation is non-critical — don't fail the sync
+      console.error("Alert generation error:", alertError);
     }
 
     return NextResponse.json({

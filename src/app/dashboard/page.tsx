@@ -99,6 +99,8 @@ export default async function DashboardPage() {
       isRecurring: true,
       recurringFrequency: true,
       currency: true,
+      notes: true,
+      userCategory: true,
       account: { select: { name: true } },
     },
     orderBy: { date: "desc" },
@@ -118,6 +120,8 @@ export default async function DashboardPage() {
     recurringFrequency: txn.recurringFrequency,
     currency: txn.currency,
     accountName: txn.account.name,
+    notes: txn.notes,
+    userCategory: txn.userCategory,
   }));
 
   // Fetch current month's spending grouped by category for the pie chart.
