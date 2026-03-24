@@ -227,7 +227,7 @@ export default function DashboardClient({
       </div>
 
       {/* Summary cards */}
-      <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
         {/* Net Worth */}
         <div className="glass rounded-xl p-6">
           <div className="flex items-center gap-3">
@@ -280,9 +280,6 @@ export default function DashboardClient({
             </div>
           </div>
         </div>
-
-        {/* Credit Score */}
-        <CreditScoreCard />
       </div>
 
       {/* Trend Chart */}
@@ -425,7 +422,7 @@ export default function DashboardClient({
         </div>
       </div>
 
-      {/* Recent Transactions + Spending Chart — side by side on larger screens */}
+      {/* Recent Transactions + Spending Chart + Credit Score */}
       <div className="mt-8 grid grid-cols-1 gap-4 lg:grid-cols-2">
         {/* Recent Transactions */}
         <div className="glass rounded-xl p-6">
@@ -587,6 +584,9 @@ export default function DashboardClient({
             </div>
           )}
         </div>
+
+        {/* Credit Score */}
+        <CreditScoreCard />
       </div>
 
       {/* Linked Accounts */}
