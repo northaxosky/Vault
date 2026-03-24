@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import PlaidLink from "@/components/PlaidLink";
-import { CATEGORY_CONFIG, getCategoryLabel, getCategoryIcon, getEffectiveCategory, formatCurrency, formatFrequency } from "@/lib/categories";
+import { getCategoryLabel, getCategoryIcon, getEffectiveCategory, formatCurrency, formatFrequency } from "@/lib/categories";
 import { PieChart, Pie, Cell, Tooltip, AreaChart, Area, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from "recharts";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { TransactionData } from "@/lib/types";

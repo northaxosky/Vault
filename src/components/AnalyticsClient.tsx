@@ -106,9 +106,10 @@ const COLORS = [
   "#f97316",
 ];
 
+type MonthlyDataRow = Record<string, string | number>;
+
 export default function AnalyticsClient({
   transactions: initialTransactions,
-  budgets,
 }: AnalyticsClientProps) {
   const [dateRange, setDateRange] = useState<DateRangeType>("6mo");
   const [selectedCategory, setSelectedCategory] = useState("all");
@@ -177,7 +178,7 @@ export default function AnalyticsClient({
     const result = Array.from(monthMap.entries())
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([month, categories]) => {
-        const obj: Record<string, unknown> = { month };
+        const obj: MonthlyDataRow = { month };
         for (const [cat, amount] of categories.entries()) {
           obj[cat] = Number(amount.toFixed(2));
         }
@@ -240,10 +241,10 @@ export default function AnalyticsClient({
     if (monthlyByCategory.length >= 2) {
       const lastMonth = Object.values(monthlyByCategory[monthlyByCategory.length - 1])
         .slice(1) // Skip month key
-        .reduce((sum: number, val: any) => sum + (typeof val === "number" ? val : 0), 0);
+        .reduce((sum: number, val: string | number) => sum + (typeof val === "number" ? val : 0), 0);
       const prevMonth = Object.values(monthlyByCategory[monthlyByCategory.length - 2])
         .slice(1)
-        .reduce((sum: number, val: any) => sum + (typeof val === "number" ? val : 0), 0);
+        .reduce((sum: number, val: string | number) => sum + (typeof val === "number" ? val : 0), 0);
 
       if (prevMonth > 0) {
         momChange = ((lastMonth - prevMonth) / prevMonth) * 100;
@@ -258,18 +259,18 @@ export default function AnalyticsClient({
 
       if (currentYear.length === 12 && previousYear.length === 12) {
         const currentYearTotal = currentYear
-          .reduce((sum: number, month: any) => {
+          .reduce((sum: number, month: MonthlyDataRow) => {
             const monthTotal = Object.values(month)
               .slice(1)
-              .reduce((s: number, v: any) => s + (typeof v === "number" ? v : 0), 0);
+              .reduce((s: number, v: string | number) => s + (typeof v === "number" ? v : 0), 0);
             return sum + monthTotal;
           }, 0);
 
         const previousYearTotal = previousYear
-          .reduce((sum: number, month: any) => {
+          .reduce((sum: number, month: MonthlyDataRow) => {
             const monthTotal = Object.values(month)
               .slice(1)
-              .reduce((s: number, v: any) => s + (typeof v === "number" ? v : 0), 0);
+              .reduce((s: number, v: string | number) => s + (typeof v === "number" ? v : 0), 0);
             return sum + monthTotal;
           }, 0);
 
@@ -295,12 +296,12 @@ export default function AnalyticsClient({
     const topCats = categoryTotals.map((c) => c.name);
 
     return monthlyByCategory.map((month) => {
-      const monthKey = (month as any).month;
-      const obj: Record<string, any> = {
+      const monthKey = month.month as string;
+      const obj: MonthlyDataRow = {
         month: formatMonthDisplay(monthKey),
       };
       for (const cat of topCats) {
-        obj[cat] = (month as any)[cat] ?? 0;
+        obj[cat] = (month as MonthlyDataRow)[cat] ?? 0;
       }
       return obj;
     });
@@ -311,9 +312,9 @@ export default function AnalyticsClient({
     return monthlyByCategory.map((month) => {
       const total = Object.values(month)
         .slice(1)
-        .reduce((sum: number, val: any) => sum + (typeof val === "number" ? val : 0), 0);
+        .reduce((sum: number, val: string | number) => sum + (typeof val === "number" ? val : 0), 0);
       return {
-        month: formatMonthDisplay((month as any).month),
+        month: formatMonthDisplay(month.month as string),
         total: Number(total.toFixed(2)),
       };
     });
@@ -472,7 +473,7 @@ export default function AnalyticsClient({
                     backgroundColor: "var(--background)",
                     border: "1px solid var(--border)",
                   }}
-                  formatter={(value: any) => formatCurrency(Number(value))}
+                  formatter={(value) => formatCurrency(Number(value))}
                 />
                 <Legend />
                 {categoryTotals.map((cat, idx) => (
@@ -517,7 +518,7 @@ export default function AnalyticsClient({
                     ))}
                   </Pie>
                   <Tooltip
-                    formatter={(value: any) => formatCurrency(Number(value))}
+                    formatter={(value) => formatCurrency(Number(value))}
                   />
                 </PieChart>
               </ResponsiveContainer>
@@ -562,9 +563,9 @@ export default function AnalyticsClient({
                     backgroundColor: "var(--background)",
                     border: "1px solid var(--border)",
                   }}
-                  formatter={(value: any) => formatCurrency(Number(value))}
+                  formatter={(value) => formatCurrency(Number(value))}
                 />
-                <Bar dataKey="total" fill={COLORS[0]} />
+                <Bar dataKey="total"fill={COLORS[0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>

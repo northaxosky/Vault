@@ -22,11 +22,11 @@ describe("generateWeeklyDigest", () => {
   it("returns correct structure with no data", async () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValue({
       name: "Test",
-    } as any);
+    } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
     vi.mocked(prisma.transaction.findMany).mockResolvedValue([]);
     vi.mocked(prisma.transaction.aggregate).mockResolvedValue({
       _sum: { amount: null },
-    } as any);
+    } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
     vi.mocked(prisma.recurringStream.findMany).mockResolvedValue([]);
     vi.mocked(prisma.budget.findMany).mockResolvedValue([]);
     vi.mocked(prisma.account.findMany).mockResolvedValue([]);
@@ -45,15 +45,15 @@ describe("generateWeeklyDigest", () => {
   it("calculates spending and categories correctly", async () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValue({
       name: "Test",
-    } as any);
+    } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
     vi.mocked(prisma.transaction.findMany).mockResolvedValue([
       { amount: 50.0, category: "FOOD_AND_DRINK" },
       { amount: 30.0, category: "FOOD_AND_DRINK" },
       { amount: 100.0, category: "SHOPPING" },
-    ] as any);
+    ] as any); // eslint-disable-line @typescript-eslint/no-explicit-any
     vi.mocked(prisma.transaction.aggregate).mockResolvedValue({
       _sum: { amount: 150 },
-    } as any);
+    } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
     vi.mocked(prisma.recurringStream.findMany).mockResolvedValue([]);
     vi.mocked(prisma.budget.findMany).mockResolvedValue([]);
     vi.mocked(prisma.account.findMany).mockResolvedValue([]);
@@ -69,13 +69,13 @@ describe("generateWeeklyDigest", () => {
   it("calculates spending change percentage", async () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValue({
       name: "Test",
-    } as any);
+    } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
     vi.mocked(prisma.transaction.findMany).mockResolvedValue([
       { amount: 200, category: "SHOPPING" },
-    ] as any);
+    ] as any); // eslint-disable-line @typescript-eslint/no-explicit-any
     vi.mocked(prisma.transaction.aggregate).mockResolvedValue({
       _sum: { amount: 100 },
-    } as any);
+    } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
     vi.mocked(prisma.recurringStream.findMany).mockResolvedValue([]);
     vi.mocked(prisma.budget.findMany).mockResolvedValue([]);
     vi.mocked(prisma.account.findMany).mockResolvedValue([]);
@@ -88,17 +88,17 @@ describe("generateWeeklyDigest", () => {
   it("includes account summary", async () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValue({
       name: "Test",
-    } as any);
+    } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
     vi.mocked(prisma.transaction.findMany).mockResolvedValue([]);
     vi.mocked(prisma.transaction.aggregate).mockResolvedValue({
       _sum: { amount: null },
-    } as any);
+    } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
     vi.mocked(prisma.recurringStream.findMany).mockResolvedValue([]);
     vi.mocked(prisma.budget.findMany).mockResolvedValue([]);
     vi.mocked(prisma.account.findMany).mockResolvedValue([
       { name: "Checking", type: "depository", currentBalance: 5000 },
       { name: "Credit Card", type: "credit", currentBalance: 500 },
-    ] as any);
+    ] as any); // eslint-disable-line @typescript-eslint/no-explicit-any
     vi.mocked(prisma.alert.count).mockResolvedValue(3);
 
     const digest = await generateWeeklyDigest("user-1");

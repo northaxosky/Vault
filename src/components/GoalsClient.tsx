@@ -13,7 +13,6 @@ import {
   TrendingUp,
   Percent,
   ArrowDown,
-  Landmark,
 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -33,7 +32,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { formatCurrency, formatFrequency } from "@/lib/categories";
 import { calculateSnowball, calculateAvalanche } from "@/lib/debt";

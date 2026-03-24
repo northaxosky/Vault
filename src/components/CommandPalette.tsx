@@ -75,26 +75,26 @@ export default function CommandPalette() {
   // Server search when debounced query changes
   useEffect(() => {
     if (debouncedQuery.length < 2) {
-      setTransactions([]);
-      setAccounts([]);
       return;
     }
 
     let cancelled = false;
-    setSearching(true);
 
-    fetch(`/api/search?q=${encodeURIComponent(debouncedQuery)}`)
-      .then((res) => res.json())
-      .then((data) => {
+    (async () => {
+      setSearching(true);
+      try {
+        const res = await fetch(`/api/search?q=${encodeURIComponent(debouncedQuery)}`);
+        const data = await res.json();
         if (!cancelled) {
           setTransactions(data.transactions ?? []);
           setAccounts(data.accounts ?? []);
         }
-      })
-      .catch(console.error)
-      .finally(() => {
+      } catch (err) {
+        console.error(err);
+      } finally {
         if (!cancelled) setSearching(false);
-      });
+      }
+    })();
 
     return () => {
       cancelled = true;
@@ -139,6 +139,9 @@ export default function CommandPalette() {
 
   const isDark =
     typeof document !== "undefined" ? getCurrentTheme() === "dark" : true;
+
+  const displayTransactions = debouncedQuery.length < 2 ? [] : transactions;
+  const displayAccounts = debouncedQuery.length < 2 ? [] : accounts;
 
   const allPages = [...navItems, settingsNavItem];
 
@@ -201,11 +204,11 @@ export default function CommandPalette() {
           </CommandGroup>
 
           {/* Transactions (server search results) */}
-          {transactions.length > 0 && (
+          {displayTransactions.length > 0 && (
             <>
               <CommandSeparator />
               <CommandGroup heading="Transactions">
-                {transactions.map((txn) => {
+                {displayTransactions.map((txn) => {
                   const displayName = txn.merchantName || txn.name;
                   const isIncome = txn.amount < 0;
                   const dateStr = new Date(txn.date).toLocaleDateString(
@@ -239,11 +242,11 @@ export default function CommandPalette() {
           )}
 
           {/* Accounts (server search results) */}
-          {accounts.length > 0 && (
+          {displayAccounts.length > 0 && (
             <>
               <CommandSeparator />
               <CommandGroup heading="Accounts">
-                {accounts.map((acc) => (
+                {displayAccounts.map((acc) => (
                   <CommandItem
                     key={acc.id}
                     value={`acct ${acc.name} ${acc.officialName ?? ""}`}

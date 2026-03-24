@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { createElement, useCallback, useMemo, useState } from "react";
 import {
   Search,
   X,
@@ -63,7 +63,6 @@ function formatDateHeader(isoDateStr: string): string {
 
 function TransactionRow({ txn, onClick }: { txn: TransactionData; onClick: () => void }) {
   const effectiveCat = getEffectiveCategory(txn.userCategory, txn.category);
-  const Icon = getCategoryIcon(effectiveCat);
   const isIncome = txn.amount < 0;
   const displayAmount = Math.abs(txn.amount);
   const displayName = txn.merchantName || txn.name || getCategoryLabel(effectiveCat);
@@ -75,7 +74,7 @@ function TransactionRow({ txn, onClick }: { txn: TransactionData; onClick: () =>
     >
       {/* Category icon */}
       <div className="shrink-0 rounded-lg bg-primary/10 p-2">
-        <Icon className="h-4 w-4 text-primary" />
+        {createElement(getCategoryIcon(effectiveCat), { className: "h-4 w-4 text-primary" })}
       </div>
 
       {/* Name + category */}

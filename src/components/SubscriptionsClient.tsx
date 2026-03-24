@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { createElement, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Search,
@@ -12,7 +12,6 @@ import {
   ChevronRight,
   Edit,
   Trash2,
-  Check,
   AlertTriangle,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -28,7 +27,6 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
-  DialogTrigger,
   DialogContent,
   DialogHeader,
   DialogTitle,
@@ -97,15 +95,6 @@ function getStreamStatus(
   if (stream.cancelledByUser) return "cancelled";
   if (!stream.isActive) return "inactive";
   return "active";
-}
-
-function formatDate(iso: string): string {
-  const d = new Date(iso);
-  return d.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
 }
 
 function formatDateShort(iso: string): string {
@@ -212,7 +201,7 @@ function EditSubscriptionDialog({
   stream: StreamData | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (id: string, data: any) => Promise<void>;
+  onSave: (id: string, data: { merchantName: string; lastAmount: number; frequency: string }) => Promise<void>;
   saving: boolean;
 }) {
   const [name, setName] = useState("");
@@ -407,7 +396,6 @@ function SubscriptionRow({
   onDelete: (stream: StreamData) => void;
   saving: boolean;
 }) {
-  const Icon = getCategoryIcon(stream.category);
   const displayName = stream.merchantName || stream.description;
   const status = getStreamStatus(stream);
   const isCancelled = status === "cancelled";
@@ -421,7 +409,7 @@ function SubscriptionRow({
       <div className="flex items-center gap-3">
         {/* Icon */}
         <div className="shrink-0 rounded-lg bg-primary/10 p-2.5">
-          <Icon className="h-5 w-5 text-primary" />
+          {createElement(getCategoryIcon(stream.category), { className: "h-5 w-5 text-primary" })}
         </div>
 
         {/* Name + details */}
@@ -657,7 +645,7 @@ export default function SubscriptionsClient({
   }
 
   // Edit subscription
-  async function handleEdit(id: string, data: any) {
+  async function handleEdit(id: string, data: { merchantName: string; lastAmount: number; frequency: string }) {
     setSaving(true);
     try {
       const res = await fetch("/api/subscriptions", {

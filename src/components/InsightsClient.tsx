@@ -4,12 +4,10 @@ import { useMemo, useState } from "react";
 import {
   ChevronLeft,
   ChevronRight,
-  DollarSign,
   TrendingUp,
   TrendingDown,
   PiggyBank,
   Wallet,
-  AlertTriangle,
   Receipt,
   BarChart3,
 } from "lucide-react";
@@ -68,10 +66,6 @@ const CHART_COLORS = [
 
 // --- Helpers ---
 
-function getMonthKey(date: Date): string {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-}
-
 function getMonthLabel(year: number, month: number): string {
   return new Date(year, month).toLocaleDateString("en-US", {
     month: "long",
@@ -102,9 +96,8 @@ export default function InsightsClient({
   transactions,
   budgets,
   snapshots,
-  currentNetWorth,
 }: InsightsClientProps) {
-  const now = new Date();
+  const now = useMemo(() => new Date(), []);
 
   // Monthly Report state
   const [reportYear, setReportYear] = useState(now.getFullYear());
