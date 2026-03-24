@@ -1,0 +1,42 @@
+import { NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+
+export async function GET() {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    const goals = await prisma.savingsGoal.findMany({
+      where: { userId: session.user.id },
+      select: {
+        name: true,
+        targetAmount: true,
+        currentAmount: true,
+        deadline: true,
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return NextResponse.json({
+      goals: goals.map((g) => {
+        const target = Number(g.targetAmount);
+        const current = Number(g.currentAmount);
+        const percentage = target > 0 ? Math.min(Math.round((current / target) * 100), 100) : 0;
+
+        return {
+          name: g.name,
+          target,
+          current,
+          percentage,
+          deadline: g.deadline?.toISOString() ?? null,
+        };
+      }),
+    });
+  } catch (error) {
+    console.error("Error fetching savings goals widget:", error);
+    return NextResponse.json({ error: "Failed to fetch savings goals" }, { status: 500 });
+  }
+}
