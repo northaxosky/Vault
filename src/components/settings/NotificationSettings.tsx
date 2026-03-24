@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
@@ -26,6 +27,7 @@ export default function NotificationSettings({
     settings.lowBalanceAlert?.toString() || ""
   );
   const [weeklyDigest, setWeeklyDigest] = useState(settings.weeklyDigest);
+  const [sendingDigest, setSendingDigest] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -147,6 +149,32 @@ export default function NotificationSettings({
             disabled={!emailAlerts}
           />
         </div>
+
+        {emailAlerts && weeklyDigest && (
+          <button
+            type="button"
+            onClick={async () => {
+              setSendingDigest(true);
+              try {
+                const res = await fetch("/api/digest/send", { method: "POST" });
+                if (res.ok) {
+                  toast.success("Test digest sent! Check your email.");
+                } else {
+                  const data = await res.json();
+                  toast.error(data.error || "Failed to send digest");
+                }
+              } catch {
+                toast.error("Failed to send digest");
+              } finally {
+                setSendingDigest(false);
+              }
+            }}
+            disabled={sendingDigest}
+            className="text-xs text-primary hover:text-primary/80 transition-colors disabled:opacity-50"
+          >
+            {sendingDigest ? "Sending..." : "Send test digest now →"}
+          </button>
+        )}
       </div>
 
       <div className="mt-6 flex items-center gap-3">
