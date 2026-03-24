@@ -8,7 +8,7 @@ const APP_URL = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
 export async function sendVerificationEmail(email: string, token: string) {
   const verifyUrl = `${APP_URL}/api/auth/verify?token=${token}`;
 
-  await resend.emails.send({
+  const { data, error } = await resend.emails.send({
     from: EMAIL_FROM,
     to: email,
     subject: "Verify your email — Vault",
@@ -26,12 +26,19 @@ export async function sendVerificationEmail(email: string, token: string) {
       </div>
     `,
   });
+
+  if (error) {
+    console.error("[email] Verification email failed:", error);
+    throw new Error(error.message);
+  }
+
+  return data;
 }
 
 export async function sendPasswordResetEmail(email: string, token: string) {
   const resetUrl = `${APP_URL}/reset-password?token=${token}`;
 
-  await resend.emails.send({
+  const { data, error } = await resend.emails.send({
     from: EMAIL_FROM,
     to: email,
     subject: "Reset your password — Vault",
@@ -49,4 +56,11 @@ export async function sendPasswordResetEmail(email: string, token: string) {
       </div>
     `,
   });
+
+  if (error) {
+    console.error("[email] Password reset email failed:", error);
+    throw new Error(error.message);
+  }
+
+  return data;
 }
