@@ -1,6 +1,12 @@
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+let _resend: Resend | null = null;
+function getResend() {
+  if (!_resend) {
+    _resend = new Resend(process.env.RESEND_API_KEY || "");
+  }
+  return _resend;
+}
 
 const EMAIL_FROM = process.env.EMAIL_FROM ?? "Vault <onboarding@resend.dev>";
 const APP_URL = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
@@ -8,7 +14,7 @@ const APP_URL = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
 export async function sendVerificationEmail(email: string, token: string) {
   const verifyUrl = `${APP_URL}/api/auth/verify?token=${token}`;
 
-  const { data, error } = await resend.emails.send({
+  const { data, error } = await getResend().emails.send({
     from: EMAIL_FROM,
     to: email,
     subject: "Verify your email — Vault",
@@ -38,7 +44,7 @@ export async function sendVerificationEmail(email: string, token: string) {
 export async function sendPasswordResetEmail(email: string, token: string) {
   const resetUrl = `${APP_URL}/reset-password?token=${token}`;
 
-  const { data, error } = await resend.emails.send({
+  const { data, error } = await getResend().emails.send({
     from: EMAIL_FROM,
     to: email,
     subject: "Reset your password — Vault",
@@ -68,7 +74,7 @@ export async function sendPasswordResetEmail(email: string, token: string) {
 export async function sendEmailChangeVerification(email: string, token: string) {
   const confirmUrl = `${APP_URL}/api/user/email/confirm?token=${token}`;
 
-  const { data, error } = await resend.emails.send({
+  const { data, error } = await getResend().emails.send({
     from: EMAIL_FROM,
     to: email,
     subject: "Confirm your new email — Vault",
@@ -106,7 +112,7 @@ export async function sendAlertEmail(
   };
   const icon = iconMap[alert.type] || "🔔";
 
-  const { data, error } = await resend.emails.send({
+  const { data, error } = await getResend().emails.send({
     from: EMAIL_FROM,
     to: email,
     subject: `${icon} ${alert.title} — Vault`,
@@ -265,7 +271,7 @@ export async function sendWeeklyDigest(
     </div>
   `;
 
-  const { data, error } = await resend.emails.send({
+  const { data, error } = await getResend().emails.send({
     from: EMAIL_FROM,
     to: email,
     subject: `📊 Your Weekly Digest (${start} – ${end}) — Vault`,
