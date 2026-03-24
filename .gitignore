@@ -49,4 +49,7 @@ prisma/*.db-journal
 # local files (notes, scratch, etc.)
 .local/
 
+# github copilot config
+.github/
+
 /src/generated/prisma
