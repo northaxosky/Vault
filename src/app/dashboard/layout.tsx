@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import DashboardSidebar from "@/components/DashboardSidebar";
 import CommandPalette from "@/components/CommandPalette";
 import { Toaster } from "sonner";
+import VerificationBanner from "@/components/VerificationBanner";
 
 export default async function DashboardLayout({
   children,
@@ -24,6 +25,11 @@ export default async function DashboardLayout({
   });
 
   const accentHue = settings?.accentHue ?? 195;
+
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { emailVerified: true },
+  });
 
   // Read theme to apply correct lightness for accent colors
   const cookieStore = await cookies();
@@ -83,6 +89,7 @@ export default async function DashboardLayout({
 
         {/* Main content area — flex-1 takes remaining width */}
         <main className="flex-1 overflow-auto">
+          <VerificationBanner emailVerified={!!user?.emailVerified} />
           {children}
         </main>
       </div>
