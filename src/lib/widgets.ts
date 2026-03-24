@@ -4,6 +4,7 @@ export const DASHBOARD_WIDGETS = [
   { id: "savings-goals", label: "Savings Goals", description: "Progress toward your savings targets" },
   { id: "budget-overview", label: "Budget Overview", description: "This month's budget status by category" },
   { id: "debt-summary", label: "Debt Summary", description: "Outstanding debts and interest rates" },
+  { id: "activity-heatmap", label: "Activity", description: "Daily transaction activity over the past 3 months" },
 ] as const;
 
 export type WidgetId = (typeof DASHBOARD_WIDGETS)[number]["id"];

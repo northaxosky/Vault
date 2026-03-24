@@ -169,7 +169,7 @@ model UserSettings {
   spendingAlert    Decimal?                      // alert for transactions over this amount
   lowBalanceAlert  Decimal?                      // alert when balance drops below this
   weeklyDigest     Boolean  @default(false)      // weekly summary email
-  dashboardWidgets String   @default("[\"credit-score\",\"upcoming-bills\",\"savings-goals\",\"budget-overview\",\"debt-summary\"]") // JSON array of enabled widget IDs
+  dashboardWidgets String   @default("[\"credit-score\",\"upcoming-bills\",\"savings-goals\",\"budget-overview\",\"debt-summary\",\"activity-heatmap\"]") // JSON array of enabled widget IDs
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 

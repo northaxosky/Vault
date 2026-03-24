@@ -403,7 +403,7 @@ export const DEMO_SETTINGS = {
   lowBalanceAlert: 100,
   weeklyDigest: true,
   dashboardWidgets:
-    '["credit-score","upcoming-bills","savings-goals","budget-overview","debt-summary"]',
+    '["credit-score","upcoming-bills","savings-goals","budget-overview","debt-summary","activity-heatmap"]',
   createdAt: daysAgo(180),
   updatedAt: daysAgo(0),
 };
