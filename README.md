@@ -7,22 +7,22 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue?logo=typescript)
 ![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)
 
-## ✨ Features
+## Features
 
-- 🏦 **Banking** — Link bank accounts via Plaid, auto-sync transactions
-- 📊 **Dashboard** — Net worth, cash & credit summaries, spending trends, category breakdown
-- 🎯 **Budgets** — Per-category monthly budgets with visual tracking
-- 💰 **Savings Goals** — Track progress toward financial targets with deadlines
-- 💳 **Debt Tracking** — Monitor debts, interest rates, and payments
-- 🔄 **Subscriptions** — Detect and track recurring charges automatically
-- 🔔 **Alerts** — Large transactions, low balance, budget overspend notifications
-- 📧 **Weekly Digest** — Automated financial summary emails via Resend
-- 📈 **Credit Score** — Estimated score based on financial health indicators
-- 📉 **Analytics** — Spending trends, category breakdowns, daily patterns
-- 🎨 **Customizable** — Toggleable dashboard widgets, accent color theming
-- 🔐 **Secure** — OAuth + email/password auth, AES-256-GCM encrypted tokens, email verification
+- **Banking** — Link bank accounts via Plaid, auto-sync transactions
+- **Dashboard** — Net worth, cash & credit summaries, spending trends, category breakdown
+- **Budgets** — Per-category monthly budgets with visual tracking
+- **Savings Goals** — Track progress toward financial targets with deadlines
+- **Debt Tracking** — Monitor debts, interest rates, and payments
+- **Subscriptions** — Detect and track recurring charges automatically
+- **Alerts** — Large transactions, low balance, budget overspend notifications
+- **Weekly Digest** — Automated financial summary emails via Resend
+- **Credit Score** — Estimated score based on financial health indicators
+- **Analytics** — Spending trends, category breakdowns, daily patterns
+- **Customizable** — Toggleable dashboard widgets, accent color theming
+- **Secure** — OAuth + email/password auth, AES-256-GCM encrypted tokens, email verification
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 | Category | Technology |
 |----------|-----------|
@@ -35,11 +35,11 @@
 | Email | [Resend](https://resend.com/) |
 | Testing | [Vitest](https://vitest.dev/) + [React Testing Library](https://testing-library.com/) |
 
-## 📸 Screenshots
+## Screenshots
 
 <!-- Screenshots coming soon -->
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
@@ -94,7 +94,7 @@ Create a `.env` file based on `.env.example`. All variables below are required u
 | `RESEND_API_KEY` | Resend API key for transactional email |
 | `EMAIL_FROM` | Sender address (e.g. `Vault <vault@yourdomain.com>`) |
 
-## 🧪 Testing
+## Testing
 
 Vault uses **Vitest** with **React Testing Library** and **jsdom** for unit and integration tests.
 
@@ -111,7 +111,7 @@ npm run test:coverage
 
 **79+ tests** covering API routes, widgets, email delivery, credit score calculations, and utility functions.
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 src/
@@ -134,7 +134,7 @@ prisma/
 └── migrations/             # Database migrations
 ```
 
-## 🗺️ Roadmap
+## Roadmap
 
 - [ ] Demo mode for public showcase
 - [ ] Plaid production environment
@@ -142,6 +142,6 @@ prisma/
 - [ ] Mobile-responsive improvements
 - [ ] Investment tracking
 
-## 📄 License
+## License
 
 Private — All rights reserved.
