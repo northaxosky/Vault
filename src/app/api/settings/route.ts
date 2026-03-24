@@ -79,6 +79,11 @@ export async function PATCH(request: Request) {
     if (body.spendingAlert !== undefined) updateData.spendingAlert = body.spendingAlert;
     if (body.lowBalanceAlert !== undefined) updateData.lowBalanceAlert = body.lowBalanceAlert;
     if (body.weeklyDigest !== undefined) updateData.weeklyDigest = Boolean(body.weeklyDigest);
+    if (body.dashboardWidgets !== undefined) {
+      updateData.dashboardWidgets = Array.isArray(body.dashboardWidgets)
+        ? JSON.stringify(body.dashboardWidgets)
+        : body.dashboardWidgets;
+    }
 
     // Upsert: update if exists, create with defaults + overrides if not
     const settings = await prisma.userSettings.upsert({

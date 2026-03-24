@@ -160,19 +160,20 @@ model InvestmentHolding {
 }
 
 model UserSettings {
-  id              String   @id @default(uuid())
-  userId          String   @unique              // one settings row per user
-  accentHue       Int      @default(195)        // 0-360, maps to --accent-hue CSS variable
-  currency        String   @default("USD")      // preferred display currency
-  dateFormat      String   @default("MM/DD/YYYY")
-  emailAlerts     Boolean  @default(true)       // master toggle for notifications
-  spendingAlert   Decimal?                      // alert for transactions over this amount
-  lowBalanceAlert Decimal?                      // alert when balance drops below this
-  weeklyDigest    Boolean  @default(false)      // weekly summary email
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id               String   @id @default(uuid())
+  userId           String   @unique              // one settings row per user
+  accentHue        Int      @default(195)        // 0-360, maps to --accent-hue CSS variable
+  currency         String   @default("USD")      // preferred display currency
+  dateFormat       String   @default("MM/DD/YYYY")
+  emailAlerts      Boolean  @default(true)       // master toggle for notifications
+  spendingAlert    Decimal?                      // alert for transactions over this amount
+  lowBalanceAlert  Decimal?                      // alert when balance drops below this
+  weeklyDigest     Boolean  @default(false)      // weekly summary email
+  dashboardWidgets String   @default("[\"credit-score\",\"upcoming-bills\",\"savings-goals\",\"budget-overview\",\"debt-summary\"]") // JSON array of enabled widget IDs
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model BalanceSnapshot {
