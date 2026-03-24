@@ -41,6 +41,8 @@ export default {
       const isLoggedIn = !!auth?.user;
       const isOnDashboard = nextUrl.pathname.startsWith("/dashboard");
 
+      if (process.env.DEMO_MODE === "true") return true;
+
       if (isOnDashboard && !isLoggedIn) {
         return false; // Redirects to pages.signIn (/login)
       }
