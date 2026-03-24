@@ -6,12 +6,20 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 function createPrismaClient() {
-  const adapter = new PrismaPg({
-    connectionString: process.env.DATABASE_URL!,
-  });
+  const connectionString = process.env.DATABASE_URL;
+  if (!connectionString) {
+    throw new Error("DATABASE_URL is not set");
+  }
+  const adapter = new PrismaPg({ connectionString });
   return new PrismaClient({ adapter });
 }
 
-export const prisma = globalForPrisma.prisma ?? createPrismaClient();
-
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
+// Lazy proxy: only connect to DB when actually accessed
+export const prisma = new Proxy({} as PrismaClient, {
+  get(_target, prop) {
+    if (!globalForPrisma.prisma) {
+      globalForPrisma.prisma = createPrismaClient();
+    }
+    return Reflect.get(globalForPrisma.prisma, prop);
+  },
+});
