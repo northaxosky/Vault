@@ -1,9 +1,31 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import DashboardClient from "@/components/DashboardClient";
-import { parseWidgets } from "@/lib/widgets";
+import { parseWidgets, DEFAULT_WIDGETS } from "@/lib/widgets";
+import { isDemoMode } from "@/lib/demo";
+import {
+  DEMO_SUMMARY,
+  DEMO_INSTITUTIONS,
+  DEMO_TRANSACTIONS,
+  DEMO_CATEGORY_SPENDING,
+  DEMO_DAILY_TREND,
+} from "@/lib/demo-data";
 
 export default async function DashboardPage() {
+  if (isDemoMode()) {
+    return (
+      <DashboardClient
+        summary={DEMO_SUMMARY}
+        institutions={DEMO_INSTITUTIONS}
+        recentTransactions={DEMO_TRANSACTIONS.slice(0, 5)}
+        categorySpending={DEMO_CATEGORY_SPENDING}
+        dailyTrend={DEMO_DAILY_TREND}
+        enabledWidgets={DEFAULT_WIDGETS}
+        plaidEnv="sandbox"
+      />
+    );
+  }
+
   const session = await auth();
 
   // Fetch all linked institutions with their accounts and balances.

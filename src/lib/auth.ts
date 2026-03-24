@@ -4,8 +4,10 @@ import Google from "next-auth/providers/google";
 import bcrypt from "bcryptjs";
 import { prisma } from "./prisma";
 import authConfig from "./auth.config";
+import { isDemoMode } from "./demo";
+import { getDemoSession } from "./demo-auth";
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
+const nextAuth = NextAuth({
   ...authConfig,
 
   providers: [
@@ -161,3 +163,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
 });
+
+export const { handlers, signIn, signOut } = nextAuth;
+
+const _auth = nextAuth.auth;
+
+export async function auth() {
+  if (isDemoMode()) return getDemoSession();
+  return _auth();
+}

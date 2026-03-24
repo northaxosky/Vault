@@ -1,9 +1,15 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { isDemoMode } from "@/lib/demo";
+import { DEMO_SETTINGS } from "@/lib/demo-data";
 
 // --- GET: Fetch user settings (creates defaults if none exist) ---
 export async function GET() {
+  if (isDemoMode()) {
+    return NextResponse.json({ settings: DEMO_SETTINGS });
+  }
+
   const session = await auth();
 
   if (!session?.user?.id) {
@@ -32,6 +38,10 @@ export async function GET() {
 
 // --- PATCH: Update user settings (accepts partial updates) ---
 export async function PATCH(request: Request) {
+  if (isDemoMode()) {
+    return NextResponse.json({ settings: DEMO_SETTINGS });
+  }
+
   const session = await auth();
 
   if (!session?.user?.id) {

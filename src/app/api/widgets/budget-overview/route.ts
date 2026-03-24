@@ -2,8 +2,14 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getCategoryLabel } from "@/lib/categories";
+import { isDemoMode } from "@/lib/demo";
+import { DEMO_BUDGETS } from "@/lib/demo-data";
 
 export async function GET() {
+  if (isDemoMode()) {
+    return NextResponse.json({ budgets: DEMO_BUDGETS });
+  }
+
   const session = await auth();
 
   if (!session?.user?.id) {

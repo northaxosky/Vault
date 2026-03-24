@@ -1,8 +1,14 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { isDemoMode } from "@/lib/demo";
+import { DEMO_RECURRING } from "@/lib/demo-data";
 
 export async function GET() {
+  if (isDemoMode()) {
+    return NextResponse.json({ bills: DEMO_RECURRING });
+  }
+
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

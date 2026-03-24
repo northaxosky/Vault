@@ -2,8 +2,14 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { calculateCreditScore } from "@/lib/credit-score";
+import { isDemoMode } from "@/lib/demo";
+import { DEMO_CREDIT_SCORE } from "@/lib/demo-data";
 
 export async function GET() {
+  if (isDemoMode()) {
+    return NextResponse.json(DEMO_CREDIT_SCORE);
+  }
+
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
