@@ -594,9 +594,6 @@ export default function DashboardClient({
             </div>
           )}
         </div>
-
-        {/* Credit Score */}
-        <CreditScoreCard />
       </div>
 
       {/* Toggleable Widget Cards */}
