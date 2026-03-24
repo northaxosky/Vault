@@ -1,10 +1,15 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { isDemoMode } from "@/lib/demo";
 
 // --- GET: Fetch recent alerts + unread count ---
 
 export async function GET() {
+  if (isDemoMode()) {
+    return NextResponse.json({ alerts: [], unreadCount: 0 });
+  }
+
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -38,6 +43,10 @@ export async function GET() {
 // --- PATCH: Mark alert(s) as read ---
 
 export async function PATCH(request: Request) {
+  if (isDemoMode()) {
+    return NextResponse.json({ success: true });
+  }
+
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

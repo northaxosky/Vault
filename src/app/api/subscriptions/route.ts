@@ -1,9 +1,14 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { isDemoMode } from "@/lib/demo";
 
 // --- GET: Fetch all recurring streams for the current user ---
 export async function GET() {
+  if (isDemoMode()) {
+    return NextResponse.json({ streams: [] });
+  }
+
   const session = await auth();
 
   if (!session?.user?.id) {
@@ -60,6 +65,10 @@ export async function GET() {
 
 // --- PATCH: Update subscription (toggle cancelled, edit details, etc.) ---
 export async function PATCH(request: Request) {
+  if (isDemoMode()) {
+    return NextResponse.json({ success: true });
+  }
+
   const session = await auth();
 
   if (!session?.user?.id) {
@@ -161,6 +170,10 @@ export async function PATCH(request: Request) {
 
 // --- DELETE: Delete a subscription ---
 export async function DELETE(request: Request) {
+  if (isDemoMode()) {
+    return NextResponse.json({ success: true });
+  }
+
   const session = await auth();
 
   if (!session?.user?.id) {

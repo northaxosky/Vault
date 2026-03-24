@@ -2,8 +2,13 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { plaidClient } from "@/lib/plaid";
 import { Products, CountryCode } from "plaid";
+import { isDemoMode } from "@/lib/demo";
 
 export async function POST() {
+  if (isDemoMode()) {
+    return NextResponse.json({ linkToken: null, error: "Demo mode - Plaid not available" });
+  }
+
   // --- Authentication check ---
   // This is the pattern for all protected routes:
   // 1. Call auth() to get the current session

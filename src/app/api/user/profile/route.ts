@@ -1,9 +1,14 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { isDemoMode } from "@/lib/demo";
 
 // --- PATCH: Update user profile (name) ---
 export async function PATCH(request: Request) {
+  if (isDemoMode()) {
+    return NextResponse.json({ user: { id: "demo", name: "Demo User", email: "demo@vault.dev" } });
+  }
+
   const session = await auth();
 
   if (!session?.user?.id) {

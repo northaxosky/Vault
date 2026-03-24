@@ -2,10 +2,15 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { isDemoMode } from "@/lib/demo";
 
 // --- DELETE: Delete user account ---
 // Requires password confirmation. Cascade deletes handle all related data.
 export async function DELETE(request: Request) {
+  if (isDemoMode()) {
+    return NextResponse.json({ error: "Account deletion is not available in demo mode" }, { status: 403 });
+  }
+
   const session = await auth();
 
   if (!session?.user?.id) {

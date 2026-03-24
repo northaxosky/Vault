@@ -4,8 +4,13 @@ import { plaidClient } from "@/lib/plaid";
 import { prisma } from "@/lib/prisma";
 import { decrypt } from "@/lib/encryption";
 import { sendAlertEmail } from "@/lib/email";
+import { isDemoMode } from "@/lib/demo";
 
 export async function POST() {
+  if (isDemoMode()) {
+    return NextResponse.json({ success: true, message: "Demo mode - sync skipped" });
+  }
+
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
