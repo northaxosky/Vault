@@ -29,6 +29,7 @@ model User {
   debtAccounts     DebtAccount[]   // debts being tracked for payoff
   transactionRules TransactionRule[] // auto-rename/re-categorize rules
   alerts           Alert[]         // in-app smart alerts
+  emailChangeTokens EmailChangeToken[]
 }
 
 // OAuth provider accounts (Google, etc.) linked to a user.
@@ -279,4 +280,16 @@ model Alert {
   createdAt       DateTime @default(now())
 
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model EmailChangeToken {
+  id       String   @id @default(uuid())
+  userId   String
+  newEmail String
+  token    String   @unique
+  expires  DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }

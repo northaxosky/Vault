@@ -18,6 +18,7 @@ import { PieChart, Pie, Cell, Tooltip, AreaChart, Area, XAxis, YAxis, CartesianG
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { TransactionData } from "@/lib/types";
 import TransactionDrawer from "@/components/TransactionDrawer";
+import CreditScoreCard from "@/components/dashboard/CreditScoreCard";
 
 // --- Types ---
 
@@ -226,7 +227,7 @@ export default function DashboardClient({
       </div>
 
       {/* Summary cards */}
-      <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {/* Net Worth */}
         <div className="glass rounded-xl p-6">
           <div className="flex items-center gap-3">
@@ -279,6 +280,9 @@ export default function DashboardClient({
             </div>
           </div>
         </div>
+
+        {/* Credit Score */}
+        <CreditScoreCard />
       </div>
 
       {/* Trend Chart */}
