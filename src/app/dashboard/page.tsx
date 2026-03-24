@@ -271,6 +271,7 @@ export default async function DashboardPage() {
       categorySpending={categorySpending}
       dailyTrend={mergedTrend}
       enabledWidgets={enabledWidgets}
+      plaidEnv={process.env.PLAID_ENV || "sandbox"}
     />
   );
 }

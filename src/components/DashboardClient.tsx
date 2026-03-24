@@ -73,6 +73,7 @@ interface DashboardClientProps {
   categorySpending: CategorySpending[];
   dailyTrend: DailyTrendData[];
   enabledWidgets: WidgetId[];
+  plaidEnv?: string;
 }
 
 // --- Chart colors ---
@@ -115,6 +116,7 @@ export default function DashboardClient({
   categorySpending,
   dailyTrend,
   enabledWidgets,
+  plaidEnv,
 }: DashboardClientProps) {
   const router = useRouter();
   const [syncing, setSyncing] = useState(false);
@@ -216,8 +218,17 @@ export default function DashboardClient({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
             Your financial overview
+            {plaidEnv && plaidEnv !== "production" && (
+              <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                plaidEnv === "sandbox"
+                  ? "bg-amber-500/10 text-amber-500"
+                  : "bg-blue-500/10 text-blue-500"
+              }`}>
+                Plaid {plaidEnv}
+              </span>
+            )}
           </p>
         </div>
         <div className="flex items-center gap-3">
