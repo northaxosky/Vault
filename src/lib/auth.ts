@@ -1,19 +1,18 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
+import Google from "next-auth/providers/google";
 import bcrypt from "bcryptjs";
 import { prisma } from "./prisma";
 import authConfig from "./auth.config";
 
-/**
- * Full auth configuration — extends the edge-safe config with
- * Prisma-dependent logic. Used by server components and API routes.
- */
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
 
-  // Override providers to include the authorize() callback,
-  // which needs Prisma for database lookups.
   providers: [
+    Google({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    }),
     Credentials({
       name: "credentials",
       credentials: {
@@ -29,24 +28,20 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const email = credentials.email as string;
         const password = credentials.password as string;
 
-        // Look up the user by email
         const user = await prisma.user.findUnique({
           where: { email },
         });
 
-        // No user found, or they signed up with Google (no password)
         if (!user || !user.passwordHash) {
           return null;
         }
 
-        // Compare the typed password against the stored hash
         const passwordMatch = await bcrypt.compare(password, user.passwordHash);
 
         if (!passwordMatch) {
           return null;
         }
 
-        // Success — return the user object. NextAuth puts this in the session.
         return {
           id: user.id,
           name: user.name,
@@ -59,8 +54,95 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   callbacks: {
     ...authConfig.callbacks,
 
-    // When your code reads the session, pull fresh user data from the DB.
-    // This ensures name changes show up without needing to log out and back in.
+    async signIn({ user, account }) {
+      if (account?.provider !== "google") return true;
+
+      const email = user.email;
+      if (!email) return false;
+
+      // Check if this Google account is already linked
+      const existingOAuth = await prisma.oAuthAccount.findUnique({
+        where: {
+          provider_providerAccountId: {
+            provider: account.provider,
+            providerAccountId: account.providerAccountId,
+          },
+        },
+        include: { user: true },
+      });
+
+      if (existingOAuth) {
+        // Returning user — update tokens
+        await prisma.oAuthAccount.update({
+          where: { id: existingOAuth.id },
+          data: {
+            accessToken: account.access_token ?? null,
+            refreshToken: account.refresh_token ?? null,
+            expiresAt: account.expires_at ?? null,
+            idToken: account.id_token ?? null,
+          },
+        });
+        user.id = existingOAuth.user.id;
+        return true;
+      }
+
+      // Check if a user with this email already exists (account linking)
+      const existingUser = await prisma.user.findUnique({
+        where: { email },
+      });
+
+      if (existingUser) {
+        // Link Google to the existing credentials-based user
+        await prisma.oAuthAccount.create({
+          data: {
+            userId: existingUser.id,
+            provider: account.provider,
+            providerAccountId: account.providerAccountId,
+            type: account.type ?? "oidc",
+            accessToken: account.access_token ?? null,
+            refreshToken: account.refresh_token ?? null,
+            expiresAt: account.expires_at ?? null,
+            tokenType: account.token_type ?? null,
+            scope: account.scope ?? null,
+            idToken: account.id_token ?? null,
+          },
+        });
+        // Google verifies emails, so mark as verified
+        if (!existingUser.emailVerified) {
+          await prisma.user.update({
+            where: { id: existingUser.id },
+            data: { emailVerified: new Date() },
+          });
+        }
+        user.id = existingUser.id;
+        return true;
+      }
+
+      // Brand new Google user — create User + OAuthAccount
+      const newUser = await prisma.user.create({
+        data: {
+          email,
+          name: user.name ?? null,
+          emailVerified: new Date(),
+          oauthAccounts: {
+            create: {
+              provider: account.provider,
+              providerAccountId: account.providerAccountId,
+              type: account.type ?? "oidc",
+              accessToken: account.access_token ?? null,
+              refreshToken: account.refresh_token ?? null,
+              expiresAt: account.expires_at ?? null,
+              tokenType: account.token_type ?? null,
+              scope: account.scope ?? null,
+              idToken: account.id_token ?? null,
+            },
+          },
+        },
+      });
+      user.id = newUser.id;
+      return true;
+    },
+
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string;
