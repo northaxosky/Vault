@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { plaidClient } from "@/lib/plaid";
 import { prisma } from "@/lib/prisma";
 import { decrypt } from "@/lib/encryption";
+import { sendAlertEmail } from "@/lib/email";
 
 export async function POST() {
   const session = await auth();
@@ -556,6 +557,21 @@ export async function POST() {
         // Batch create all alerts
         if (alertsToCreate.length > 0) {
           await prisma.alert.createMany({ data: alertsToCreate });
+
+          // Send email notifications for each alert (non-blocking)
+          const user = await prisma.user.findUnique({
+            where: { id: session.user.id },
+            select: { email: true },
+          });
+          if (user?.email) {
+            for (const alert of alertsToCreate) {
+              try {
+                await sendAlertEmail(user.email, alert);
+              } catch (emailError) {
+                console.error("[email] Failed to send alert email:", emailError);
+              }
+            }
+          }
         }
       }
     } catch (alertError) {

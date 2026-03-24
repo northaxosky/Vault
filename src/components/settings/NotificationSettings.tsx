@@ -65,7 +65,7 @@ export default function NotificationSettings({
         Configure alert preferences
       </p>
       <p className="mt-1 text-xs text-primary/70">
-        In-app alerts are active. Email delivery is coming soon.
+        Alerts are delivered in-app and via email when enabled.
       </p>
 
       <Separator className="my-4" />
