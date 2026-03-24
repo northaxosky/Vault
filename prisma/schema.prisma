@@ -13,20 +13,60 @@ datasource db {
 }
 
 model User {
-  id           String         @id @default(uuid())
-  name         String?
-  email        String         @unique
-  passwordHash String?
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
+  id            String         @id @default(uuid())
+  name          String?
+  email         String         @unique
+  passwordHash  String?
+  emailVerified DateTime?      // null = unverified, set when email link clicked
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
 
-  plaidItems       PlaidItem[]    // a user can have many linked banks
-  settings         UserSettings?  // a user has one settings record
-  budgets          Budget[]       // per-category monthly spending limits
-  savingsGoals     SavingsGoal[]  // savings goals with targets and deadlines
-  debtAccounts     DebtAccount[]  // debts being tracked for payoff
+  oauthAccounts    OAuthAccount[]  // linked OAuth providers (Google, etc.)
+  plaidItems       PlaidItem[]     // a user can have many linked banks
+  settings         UserSettings?   // a user has one settings record
+  budgets          Budget[]        // per-category monthly spending limits
+  savingsGoals     SavingsGoal[]   // savings goals with targets and deadlines
+  debtAccounts     DebtAccount[]   // debts being tracked for payoff
   transactionRules TransactionRule[] // auto-rename/re-categorize rules
-  alerts           Alert[]        // in-app smart alerts
+  alerts           Alert[]         // in-app smart alerts
+}
+
+// OAuth provider accounts (Google, etc.) linked to a user.
+// Named OAuthAccount to avoid collision with the Plaid bank Account model.
+model OAuthAccount {
+  id                String  @id @default(uuid())
+  userId            String
+  provider          String  // "google", "github", etc.
+  providerAccountId String  // ID from the OAuth provider
+  type              String  // "oauth" | "oidc"
+  accessToken       String?
+  refreshToken      String?
+  expiresAt         Int?
+  tokenType         String?
+  scope             String?
+  idToken           String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model VerificationToken {
+  id      String   @id @default(uuid())
+  email   String
+  token   String   @unique
+  expires DateTime
+
+  @@index([email])
+}
+
+model PasswordResetToken {
+  id      String   @id @default(uuid())
+  email   String
+  token   String   @unique
+  expires DateTime
+
+  @@index([email])
 }
 
 model PlaidItem {
