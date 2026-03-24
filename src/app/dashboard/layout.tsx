@@ -6,30 +6,35 @@ import DashboardSidebar from "@/components/DashboardSidebar";
 import CommandPalette from "@/components/CommandPalette";
 import { Toaster } from "sonner";
 import VerificationBanner from "@/components/VerificationBanner";
+import { isDemoMode } from "@/lib/demo";
+import { DEMO_USER, DEMO_SETTINGS } from "@/lib/demo-data";
 
 export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  // Middleware already guarantees we're logged in — this just retrieves
-  // the session so we can read the user ID for data queries.
   const session = (await auth())!;
 
-  // Read the user's accent hue from their settings (if any).
-  // This is applied as an inline style on the wrapper so the correct
-  // theme color is rendered immediately — no flash of wrong color.
-  const settings = await prisma.userSettings.findUnique({
-    where: { userId: session.user.id },
-    select: { accentHue: true },
-  });
+  let accentHue = 195;
+  let emailVerified = true;
 
-  const accentHue = settings?.accentHue ?? 195;
+  if (isDemoMode()) {
+    accentHue = DEMO_SETTINGS.accentHue;
+    emailVerified = DEMO_USER.emailVerified;
+  } else {
+    const settings = await prisma.userSettings.findUnique({
+      where: { userId: session.user.id },
+      select: { accentHue: true },
+    });
+    accentHue = settings?.accentHue ?? 195;
 
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    select: { emailVerified: true },
-  });
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { emailVerified: true },
+    });
+    emailVerified = !!user?.emailVerified;
+  }
 
   // Read theme to apply correct lightness for accent colors
   const cookieStore = await cookies();
@@ -89,7 +94,7 @@ export default async function DashboardLayout({
 
         {/* Main content area — flex-1 takes remaining width */}
         <main className="flex-1 overflow-auto">
-          <VerificationBanner emailVerified={!!user?.emailVerified} />
+          <VerificationBanner emailVerified={emailVerified} />
           {children}
         </main>
       </div>
