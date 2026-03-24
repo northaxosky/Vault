@@ -7,168 +7,171 @@ import authConfig from "./auth.config";
 import { isDemoMode } from "./demo";
 import { getDemoSession } from "./demo-auth";
 
-const nextAuth = NextAuth({
-  ...authConfig,
+let _nextAuth: ReturnType<typeof NextAuth> | null = null;
 
-  providers: [
-    Google({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    }),
-    Credentials({
-      name: "credentials",
-      credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" },
-      },
+function getNextAuth() {
+  if (!_nextAuth) {
+    _nextAuth = NextAuth({
+      ...authConfig,
 
-      async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          return null;
-        }
-
-        const email = credentials.email as string;
-        const password = credentials.password as string;
-
-        const user = await prisma.user.findUnique({
-          where: { email },
-        });
-
-        if (!user || !user.passwordHash) {
-          return null;
-        }
-
-        const passwordMatch = await bcrypt.compare(password, user.passwordHash);
-
-        if (!passwordMatch) {
-          return null;
-        }
-
-        return {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-        };
-      },
-    }),
-  ],
-
-  callbacks: {
-    ...authConfig.callbacks,
-
-    async signIn({ user, account }) {
-      if (account?.provider !== "google") return true;
-
-      const email = user.email;
-      if (!email) return false;
-
-      // Check if this Google account is already linked
-      const existingOAuth = await prisma.oAuthAccount.findUnique({
-        where: {
-          provider_providerAccountId: {
-            provider: account.provider,
-            providerAccountId: account.providerAccountId,
+      providers: [
+        Google({
+          clientId: process.env.GOOGLE_CLIENT_ID!,
+          clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+        }),
+        Credentials({
+          name: "credentials",
+          credentials: {
+            email: { label: "Email", type: "email" },
+            password: { label: "Password", type: "password" },
           },
-        },
-        include: { user: true },
-      });
 
-      if (existingOAuth) {
-        // Returning user — update tokens
-        await prisma.oAuthAccount.update({
-          where: { id: existingOAuth.id },
-          data: {
-            accessToken: account.access_token ?? null,
-            refreshToken: account.refresh_token ?? null,
-            expiresAt: account.expires_at ?? null,
-            idToken: account.id_token ?? null,
+          async authorize(credentials) {
+            if (!credentials?.email || !credentials?.password) {
+              return null;
+            }
+
+            const email = credentials.email as string;
+            const password = credentials.password as string;
+
+            const user = await prisma.user.findUnique({
+              where: { email },
+            });
+
+            if (!user || !user.passwordHash) {
+              return null;
+            }
+
+            const passwordMatch = await bcrypt.compare(password, user.passwordHash);
+
+            if (!passwordMatch) {
+              return null;
+            }
+
+            return {
+              id: user.id,
+              name: user.name,
+              email: user.email,
+            };
           },
-        });
-        user.id = existingOAuth.user.id;
-        return true;
-      }
+        }),
+      ],
 
-      // Check if a user with this email already exists (account linking)
-      const existingUser = await prisma.user.findUnique({
-        where: { email },
-      });
+      callbacks: {
+        ...authConfig.callbacks,
 
-      if (existingUser) {
-        // Link Google to the existing credentials-based user
-        await prisma.oAuthAccount.create({
-          data: {
-            userId: existingUser.id,
-            provider: account.provider,
-            providerAccountId: account.providerAccountId,
-            type: account.type ?? "oidc",
-            accessToken: account.access_token ?? null,
-            refreshToken: account.refresh_token ?? null,
-            expiresAt: account.expires_at ?? null,
-            tokenType: account.token_type ?? null,
-            scope: account.scope ?? null,
-            idToken: account.id_token ?? null,
-          },
-        });
-        // Google verifies emails, so mark as verified
-        if (!existingUser.emailVerified) {
-          await prisma.user.update({
-            where: { id: existingUser.id },
-            data: { emailVerified: new Date() },
-          });
-        }
-        user.id = existingUser.id;
-        return true;
-      }
+        async signIn({ user, account }) {
+          if (account?.provider !== "google") return true;
 
-      // Brand new Google user — create User + OAuthAccount
-      const newUser = await prisma.user.create({
-        data: {
-          email,
-          name: user.name ?? null,
-          emailVerified: new Date(),
-          oauthAccounts: {
-            create: {
-              provider: account.provider,
-              providerAccountId: account.providerAccountId,
-              type: account.type ?? "oidc",
-              accessToken: account.access_token ?? null,
-              refreshToken: account.refresh_token ?? null,
-              expiresAt: account.expires_at ?? null,
-              tokenType: account.token_type ?? null,
-              scope: account.scope ?? null,
-              idToken: account.id_token ?? null,
+          const email = user.email;
+          if (!email) return false;
+
+          const existingOAuth = await prisma.oAuthAccount.findUnique({
+            where: {
+              provider_providerAccountId: {
+                provider: account.provider,
+                providerAccountId: account.providerAccountId,
+              },
             },
-          },
+            include: { user: true },
+          });
+
+          if (existingOAuth) {
+            await prisma.oAuthAccount.update({
+              where: { id: existingOAuth.id },
+              data: {
+                accessToken: account.access_token ?? null,
+                refreshToken: account.refresh_token ?? null,
+                expiresAt: account.expires_at ?? null,
+                idToken: account.id_token ?? null,
+              },
+            });
+            user.id = existingOAuth.user.id;
+            return true;
+          }
+
+          const existingUser = await prisma.user.findUnique({
+            where: { email },
+          });
+
+          if (existingUser) {
+            await prisma.oAuthAccount.create({
+              data: {
+                userId: existingUser.id,
+                provider: account.provider,
+                providerAccountId: account.providerAccountId,
+                type: account.type ?? "oidc",
+                accessToken: account.access_token ?? null,
+                refreshToken: account.refresh_token ?? null,
+                expiresAt: account.expires_at ?? null,
+                tokenType: account.token_type ?? null,
+                scope: account.scope ?? null,
+                idToken: account.id_token ?? null,
+              },
+            });
+            if (!existingUser.emailVerified) {
+              await prisma.user.update({
+                where: { id: existingUser.id },
+                data: { emailVerified: new Date() },
+              });
+            }
+            user.id = existingUser.id;
+            return true;
+          }
+
+          const newUser = await prisma.user.create({
+            data: {
+              email,
+              name: user.name ?? null,
+              emailVerified: new Date(),
+              oauthAccounts: {
+                create: {
+                  provider: account.provider,
+                  providerAccountId: account.providerAccountId,
+                  type: account.type ?? "oidc",
+                  accessToken: account.access_token ?? null,
+                  refreshToken: account.refresh_token ?? null,
+                  expiresAt: account.expires_at ?? null,
+                  tokenType: account.token_type ?? null,
+                  scope: account.scope ?? null,
+                  idToken: account.id_token ?? null,
+                },
+              },
+            },
+          });
+          user.id = newUser.id;
+          return true;
         },
-      });
-      user.id = newUser.id;
-      return true;
-    },
 
-    async session({ session, token }) {
-      if (session.user) {
-        session.user.id = token.id as string;
+        async session({ session, token }) {
+          if (session.user) {
+            session.user.id = token.id as string;
 
-        const dbUser = await prisma.user.findUnique({
-          where: { id: token.id as string },
-          select: { name: true, email: true },
-        });
+            const dbUser = await prisma.user.findUnique({
+              where: { id: token.id as string },
+              select: { name: true, email: true },
+            });
 
-        if (dbUser) {
-          session.user.name = dbUser.name;
-          session.user.email = dbUser.email;
-        }
-      }
-      return session;
-    },
-  },
+            if (dbUser) {
+              session.user.name = dbUser.name;
+              session.user.email = dbUser.email;
+            }
+          }
+          return session;
+        },
+      },
+    });
+  }
+  return _nextAuth;
+}
+
+export const handlers = new Proxy({} as ReturnType<typeof NextAuth>["handlers"], {
+  get(_target, prop) { return Reflect.get(getNextAuth().handlers, prop); },
 });
-
-export const { handlers, signIn, signOut } = nextAuth;
-
-const _auth = nextAuth.auth;
+export const signIn = (...args: Parameters<ReturnType<typeof NextAuth>["signIn"]>) => getNextAuth().signIn(...args);
+export const signOut = (...args: Parameters<ReturnType<typeof NextAuth>["signOut"]>) => getNextAuth().signOut(...args);
 
 export async function auth() {
   if (isDemoMode()) return getDemoSession();
-  return _auth();
+  return getNextAuth().auth();
 }
