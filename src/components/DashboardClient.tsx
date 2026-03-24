@@ -19,6 +19,12 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { TransactionData } from "@/lib/types";
 import TransactionDrawer from "@/components/TransactionDrawer";
 import CreditScoreCard from "@/components/dashboard/CreditScoreCard";
+import WidgetCustomizer from "@/components/dashboard/WidgetCustomizer";
+import UpcomingBillsCard from "@/components/dashboard/UpcomingBillsCard";
+import SavingsGoalsCard from "@/components/dashboard/SavingsGoalsCard";
+import BudgetOverviewCard from "@/components/dashboard/BudgetOverviewCard";
+import DebtSummaryCard from "@/components/dashboard/DebtSummaryCard";
+import type { WidgetId } from "@/lib/widgets";
 
 // --- Types ---
 
@@ -66,6 +72,7 @@ interface DashboardClientProps {
   recentTransactions: TransactionData[];
   categorySpending: CategorySpending[];
   dailyTrend: DailyTrendData[];
+  enabledWidgets: WidgetId[];
 }
 
 // --- Chart colors ---
@@ -107,6 +114,7 @@ export default function DashboardClient({
   recentTransactions,
   categorySpending,
   dailyTrend,
+  enabledWidgets,
 }: DashboardClientProps) {
   const router = useRouter();
   const [syncing, setSyncing] = useState(false);
@@ -115,6 +123,7 @@ export default function DashboardClient({
   const [timeRange, setTimeRange] = useState<TimeRange>("1M");
   const [selectedTxn, setSelectedTxn] = useState<TransactionData | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [widgets, setWidgets] = useState<WidgetId[]>(enabledWidgets);
 
   const handleRowClick = useCallback((txn: TransactionData) => {
     setSelectedTxn(txn);
@@ -212,6 +221,7 @@ export default function DashboardClient({
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <WidgetCustomizer enabledWidgets={widgets} onSave={setWidgets} />
           <button
             onClick={triggerSync}
             disabled={syncing}
@@ -588,6 +598,17 @@ export default function DashboardClient({
         {/* Credit Score */}
         <CreditScoreCard />
       </div>
+
+      {/* Toggleable Widget Cards */}
+      {widgets.length > 0 && (
+        <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
+          {widgets.includes("credit-score") && <CreditScoreCard />}
+          {widgets.includes("upcoming-bills") && <UpcomingBillsCard />}
+          {widgets.includes("savings-goals") && <SavingsGoalsCard />}
+          {widgets.includes("budget-overview") && <BudgetOverviewCard />}
+          {widgets.includes("debt-summary") && <DebtSummaryCard />}
+        </div>
+      )}
 
       {/* Linked Accounts */}
       <div className="mt-8">

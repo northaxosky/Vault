@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import DashboardClient from "@/components/DashboardClient";
+import { parseWidgets } from "@/lib/widgets";
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -255,6 +256,13 @@ export default async function DashboardPage() {
     }
   }
 
+  // Fetch the user's dashboard widget preferences.
+  const widgetSettings = await prisma.userSettings.findUnique({
+    where: { userId: session!.user.id },
+    select: { dashboardWidgets: true },
+  });
+  const enabledWidgets = parseWidgets(widgetSettings?.dashboardWidgets);
+
   return (
     <DashboardClient
       summary={{ netWorth, cashTotal, creditTotal, totalAccounts }}
@@ -262,6 +270,7 @@ export default async function DashboardPage() {
       recentTransactions={recentTransactions}
       categorySpending={categorySpending}
       dailyTrend={mergedTrend}
+      enabledWidgets={enabledWidgets}
     />
   );
 }
