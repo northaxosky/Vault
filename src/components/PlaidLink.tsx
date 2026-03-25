@@ -29,6 +29,21 @@ function PlaidLinkButton({
   const { open, ready } = usePlaidLink({
     token: linkToken,
     onSuccess: handleSuccess,
+    onExit: (error, metadata) => {
+      if (error) {
+        console.error("[Plaid Link] exit error:", {
+          errorType: error.error_type,
+          errorCode: error.error_code,
+          errorMessage: error.error_message,
+          displayMessage: error.display_message,
+        });
+        console.error("[Plaid Link] metadata:", {
+          institution: metadata?.institution,
+          linkSessionId: metadata?.link_session_id,
+          status: metadata?.status,
+        });
+      }
+    },
   });
 
   return (
@@ -60,9 +75,13 @@ export default function PlaidLink({
 
         if (data.linkToken) {
           setLinkToken(data.linkToken);
+        } else {
+          console.error("[Plaid Link] create-link-token failed:", data);
+          setMessage(data.plaidError?.errorMessage || data.error || "Failed to initialize Plaid Link");
         }
       } catch (error) {
         console.error("Failed to fetch link token:", error);
+        setMessage("Failed to connect to Plaid. Check your configuration.");
       }
     }
 

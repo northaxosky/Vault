@@ -23,6 +23,10 @@ const configuration = new Configuration({
 export const plaidClient = new PlaidApi(configuration);
 export { plaidEnv };
 
+if (process.env.NODE_ENV === "development") {
+  console.log(`[Plaid] env=${plaidEnv}, clientId=${process.env.PLAID_CLIENT_ID ? "set" : "MISSING"}, secret=${secretKey ? "set" : "MISSING"}`);
+}
+
 /**
  * Extract structured error details from a Plaid API error.
  * Plaid errors arrive as AxiosErrors with error info in response.data.
