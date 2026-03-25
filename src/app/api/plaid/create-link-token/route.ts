@@ -6,7 +6,7 @@ import { isDemoMode } from "@/lib/demo";
 
 export async function POST() {
   if (isDemoMode()) {
-    return NextResponse.json({ linkToken: null, error: "Demo mode - Plaid not available" });
+    return NextResponse.json({ linkToken: null });
   }
 
   // --- Authentication check ---
