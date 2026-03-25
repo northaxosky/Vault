@@ -29,7 +29,10 @@ export async function POST() {
         client_user_id: session.user.id, // ties this link to our user
       },
       client_name: "Vault",               // shown in the Plaid UI
-      products: [Products.Transactions, Products.Investments],
+      products: [Products.Transactions],
+      // Investments are synced opportunistically — requesting them here
+      // would restrict Link to only investment-capable institutions.
+      optional_products: [Products.Investments],
       country_codes: [CountryCode.Us],
       language: "en",
     });
