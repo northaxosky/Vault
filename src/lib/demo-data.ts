@@ -403,7 +403,7 @@ export const DEMO_SETTINGS = {
   lowBalanceAlert: 100,
   weeklyDigest: true,
   dashboardWidgets:
-    '["credit-score","upcoming-bills","savings-goals","budget-overview","debt-summary","activity-heatmap"]',
+    '["credit-score","upcoming-bills","savings-goals","budget-overview","debt-summary","activity-heatmap","stock-watchlist","quick-links"]',
   createdAt: daysAgo(180),
   updatedAt: daysAgo(0),
 };
@@ -418,3 +418,67 @@ export const DEMO_SUMMARY = {
   creditTotal: 1247.33,
   totalAccounts: 4,
 };
+
+// ---------------------------------------------------------------------------
+// Stock Watchlist demo data
+// ---------------------------------------------------------------------------
+
+export interface WatchlistItemData {
+  ticker: string;
+  name: string;
+  addedAt: string;
+  quote: {
+    price: number;
+    change: number;
+    changePercent: number;
+    previousClose: number;
+    open: number;
+    dayHigh: number;
+    dayLow: number;
+    volume: number;
+    marketCap: number;
+    currency: string;
+  };
+}
+
+export const DEMO_WATCHLIST: WatchlistItemData[] = [
+  {
+    ticker: "AAPL", name: "Apple Inc.", addedAt: daysAgo(30),
+    quote: { price: 198.45, change: 2.31, changePercent: 1.18, previousClose: 196.14, open: 196.80, dayHigh: 199.10, dayLow: 196.20, volume: 54_320_000, marketCap: 3_050_000_000_000, currency: "USD" },
+  },
+  {
+    ticker: "MSFT", name: "Microsoft Corporation", addedAt: daysAgo(25),
+    quote: { price: 425.80, change: -1.45, changePercent: -0.34, previousClose: 427.25, open: 426.50, dayHigh: 428.00, dayLow: 424.10, volume: 22_150_000, marketCap: 3_160_000_000_000, currency: "USD" },
+  },
+  {
+    ticker: "GOOGL", name: "Alphabet Inc.", addedAt: daysAgo(20),
+    quote: { price: 172.35, change: 3.12, changePercent: 1.84, previousClose: 169.23, open: 170.00, dayHigh: 173.50, dayLow: 169.80, volume: 28_400_000, marketCap: 2_130_000_000_000, currency: "USD" },
+  },
+  {
+    ticker: "AMZN", name: "Amazon.com Inc.", addedAt: daysAgo(15),
+    quote: { price: 187.60, change: 0.85, changePercent: 0.46, previousClose: 186.75, open: 186.90, dayHigh: 188.40, dayLow: 185.50, volume: 41_800_000, marketCap: 1_960_000_000_000, currency: "USD" },
+  },
+  {
+    ticker: "TSLA", name: "Tesla Inc.", addedAt: daysAgo(10),
+    quote: { price: 245.20, change: -4.80, changePercent: -1.92, previousClose: 250.00, open: 249.30, dayHigh: 251.00, dayLow: 243.50, volume: 98_700_000, marketCap: 780_000_000_000, currency: "USD" },
+  },
+];
+
+// ---------------------------------------------------------------------------
+// Quick Links demo data
+// ---------------------------------------------------------------------------
+
+export interface QuickLinkData {
+  id: string;
+  label: string;
+  url: string;
+  icon: string;
+  sortOrder: number;
+}
+
+export const DEMO_QUICK_LINKS: QuickLinkData[] = [
+  { id: "ql-1", label: "Chase", url: "https://chase.com", icon: "🏦", sortOrder: 0 },
+  { id: "ql-2", label: "Robinhood", url: "https://robinhood.com", icon: "📈", sortOrder: 1 },
+  { id: "ql-3", label: "Mint", url: "https://mint.intuit.com", icon: "🌿", sortOrder: 2 },
+  { id: "ql-4", label: "Credit Karma", url: "https://creditkarma.com", icon: "⭐", sortOrder: 3 },
+];
