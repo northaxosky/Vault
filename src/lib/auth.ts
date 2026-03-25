@@ -160,6 +160,11 @@ function getNextAuth() {
             if (dbUser) {
               session.user.name = dbUser.name;
               session.user.email = dbUser.email;
+            } else {
+              // User was deleted — invalidate session
+              session.user.id = "";
+              session.user.name = null;
+              session.user.email = "";
             }
           }
           return session;

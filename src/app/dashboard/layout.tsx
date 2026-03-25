@@ -16,6 +16,12 @@ export default async function DashboardLayout({
 }) {
   const session = (await auth())!;
 
+  // If user was deleted but session cookie persists, redirect to login
+  if (!isDemoMode() && (!session?.user?.id || session.user.id === "")) {
+    const { redirect } = await import("next/navigation");
+    redirect("/login");
+  }
+
   let accentHue = 195;
   let emailVerified = true;
 
