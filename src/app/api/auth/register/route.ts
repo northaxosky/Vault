@@ -3,9 +3,27 @@ import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { sendVerificationEmail } from "@/lib/email";
+import { rateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
   try {
+    const ip = request.headers.get("x-forwarded-for") ?? "unknown";
+    const { success, remaining, resetAt } = rateLimit(`auth:${ip}`, {
+      max: 5,
+      windowMs: 15 * 60 * 1000,
+    });
+    if (!success) {
+      return NextResponse.json(
+        { error: "Too many requests" },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": "900",
+            "X-RateLimit-Remaining": "0",
+          },
+        }
+      );
+    }
     const body = await request.json();
     const { email, password, name } = body;
 
@@ -13,14 +31,14 @@ export async function POST(request: Request) {
     if (!email || !password) {
       return NextResponse.json(
         { error: "Email and password are required" },
-        { status: 400 }
+        { status: 400, headers: { "X-RateLimit-Remaining": String(remaining) } }
       );
     }
 
     if (password.length < 8) {
       return NextResponse.json(
         { error: "Password must be at least 8 characters" },
-        { status: 400 }
+        { status: 400, headers: { "X-RateLimit-Remaining": String(remaining) } }
       );
     }
 
@@ -32,7 +50,7 @@ export async function POST(request: Request) {
     if (existingUser) {
       return NextResponse.json(
         { error: "An account with this email already exists" },
-        { status: 409 } // 409 = Conflict
+        { status: 409, headers: { "X-RateLimit-Remaining": String(remaining) } }
       );
     }
 
@@ -73,7 +91,7 @@ export async function POST(request: Request) {
           name: user.name,
         },
       },
-      { status: 201 }
+      { status: 201, headers: { "X-RateLimit-Remaining": String(remaining) } }
     );
   } catch (error) {
     console.error("Registration error:", error);
