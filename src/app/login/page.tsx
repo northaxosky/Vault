@@ -87,7 +87,7 @@ export default function LoginPage() {
         <div className="space-y-4">
           <button
             type="button"
-            onClick={() => signIn("google")}
+            onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
             className="flex w-full items-center justify-center gap-3 rounded-lg border border-border bg-input px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background"
           >
             <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">

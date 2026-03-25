@@ -28,6 +28,25 @@ export default {
     }),
   ],
   callbacks: {
+    // After sign-in, redirect to /dashboard instead of back to /login
+    redirect({ url, baseUrl }) {
+      // Relative paths
+      if (url.startsWith("/")) {
+        // Don't redirect back to login after successful auth
+        if (url === "/login" || url.startsWith("/login?")) {
+          return `${baseUrl}/dashboard`;
+        }
+        return `${baseUrl}${url}`;
+      }
+      // Same-origin absolute URLs
+      if (new URL(url).origin === baseUrl) {
+        const path = new URL(url).pathname;
+        if (path === "/login") return `${baseUrl}/dashboard`;
+        return url;
+      }
+      return `${baseUrl}/dashboard`;
+    },
+
     // Attach user ID to the JWT
     jwt({ token, user }) {
       if (user) {
