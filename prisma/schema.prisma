@@ -30,6 +30,8 @@ model User {
   transactionRules TransactionRule[] // auto-rename/re-categorize rules
   alerts           Alert[]         // in-app smart alerts
   emailChangeTokens EmailChangeToken[]
+  watchlistItems   WatchlistItem[] // stock watchlist
+  quickLinks       QuickLink[]     // custom quick links
 }
 
 // OAuth provider accounts (Google, etc.) linked to a user.
@@ -289,6 +291,33 @@ model EmailChangeToken {
   newEmail String
   token    String   @unique
   expires  DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model WatchlistItem {
+  id      String   @id @default(uuid())
+  userId  String
+  ticker  String
+  name    String
+  addedAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, ticker])
+  @@index([userId])
+}
+
+model QuickLink {
+  id        String   @id @default(uuid())
+  userId    String
+  label     String
+  url       String
+  icon      String?
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
