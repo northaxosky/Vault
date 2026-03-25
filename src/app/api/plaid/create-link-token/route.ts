@@ -44,13 +44,8 @@ export async function POST() {
     return NextResponse.json(
       {
         error: "Failed to create link token",
-        plaidError: detail
-          ? {
-              errorType: detail.errorType,
-              errorCode: detail.errorCode,
-              errorMessage: detail.errorMessage,
-              displayMessage: detail.displayMessage,
-            }
+        plaidError: detail?.displayMessage
+          ? { message: detail.displayMessage }
           : undefined,
       },
       { status: detail?.statusCode || 500 }
