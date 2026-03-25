@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { sendVerificationEmail } from "@/lib/email";
 import { rateLimit } from "@/lib/rate-limit";
+import { validatePassword, BCRYPT_ROUNDS } from "@/lib/validation";
 
 export async function POST(request: Request) {
   try {
@@ -35,9 +36,10 @@ export async function POST(request: Request) {
       );
     }
 
-    if (password.length < 8) {
+    const passwordCheck = validatePassword(password);
+    if (!passwordCheck.valid) {
       return NextResponse.json(
-        { error: "Password must be at least 8 characters" },
+        { error: passwordCheck.message },
         { status: 400, headers: { "X-RateLimit-Remaining": String(remaining) } }
       );
     }
@@ -55,9 +57,7 @@ export async function POST(request: Request) {
     }
 
     // --- Hash the password ---
-    // The "10" is the salt rounds — how many times bcrypt scrambles the hash.
-    // Higher = more secure but slower.
-    const passwordHash = await bcrypt.hash(password, 10);
+    const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
 
     // --- Capitalize each word in the name ---
     const formattedName = name

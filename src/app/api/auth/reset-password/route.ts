@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { rateLimit } from "@/lib/rate-limit";
+import { validatePassword, BCRYPT_ROUNDS } from "@/lib/validation";
 
 export async function POST(request: Request) {
   try {
@@ -31,9 +32,10 @@ export async function POST(request: Request) {
       );
     }
 
-    if (password.length < 8) {
+    const passwordCheck = validatePassword(password);
+    if (!passwordCheck.valid) {
       return NextResponse.json(
-        { error: "Password must be at least 8 characters" },
+        { error: passwordCheck.message },
         { status: 400, headers: { "X-RateLimit-Remaining": String(remaining) } }
       );
     }
@@ -49,7 +51,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const passwordHash = await bcrypt.hash(password, 10);
+    const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
 
     await prisma.user.update({
       where: { email: resetToken.email },

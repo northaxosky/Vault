@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { validatePassword, BCRYPT_ROUNDS } from "@/lib/validation";
 
 // --- PATCH: Change password ---
 export async function PATCH(request: Request) {
@@ -21,9 +22,10 @@ export async function PATCH(request: Request) {
       );
     }
 
-    if (newPassword.length < 8) {
+    const passwordCheck = validatePassword(newPassword);
+    if (!passwordCheck.valid) {
       return NextResponse.json(
-        { error: "New password must be at least 8 characters" },
+        { error: passwordCheck.message },
         { status: 400 }
       );
     }
@@ -52,7 +54,7 @@ export async function PATCH(request: Request) {
     }
 
     // Hash the new password
-    const newHash = await bcrypt.hash(newPassword, 10);
+    const newHash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
 
     await prisma.user.update({
       where: { id: session.user.id },
