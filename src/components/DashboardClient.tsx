@@ -77,6 +77,7 @@ interface DashboardClientProps {
   dailyTrend: DailyTrendData[];
   enabledWidgets: WidgetId[];
   plaidEnv?: string;
+  isDemo?: boolean;
 }
 
 // --- Chart colors ---
@@ -120,6 +121,7 @@ export default function DashboardClient({
   dailyTrend,
   enabledWidgets,
   plaidEnv,
+  isDemo = false,
 }: DashboardClientProps) {
   const router = useRouter();
   const [syncing, setSyncing] = useState(false);
@@ -199,7 +201,7 @@ export default function DashboardClient({
             Link your first bank account to start tracking your finances.
           </p>
           <div className="mt-6 inline-block">
-            <PlaidLink onLinkSuccess={handleLinkSuccess} />
+            <PlaidLink onLinkSuccess={handleLinkSuccess} isDemo={isDemo} />
           </div>
         </div>
       </div>
@@ -246,7 +248,7 @@ export default function DashboardClient({
             />
             {syncing ? "Syncing..." : "Sync"}
           </button>
-          <PlaidLink onLinkSuccess={handleLinkSuccess} />
+          <PlaidLink onLinkSuccess={handleLinkSuccess} isDemo={isDemo} />
         </div>
       </div>
 

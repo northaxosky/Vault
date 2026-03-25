@@ -22,6 +22,7 @@ export default async function DashboardPage() {
         dailyTrend={DEMO_DAILY_TREND}
         enabledWidgets={DEFAULT_WIDGETS}
         plaidEnv="sandbox"
+        isDemo
       />
     );
   }

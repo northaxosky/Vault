@@ -60,12 +60,16 @@ function PlaidLinkButton({
 
 export default function PlaidLink({
   onLinkSuccess,
+  isDemo = false,
 }: {
   onLinkSuccess?: () => void;
+  isDemo?: boolean;
 }) {
   const [linkToken, setLinkToken] = useState<string | null>(null);
 
   useEffect(() => {
+    if (isDemo) return;
+
     async function fetchLinkToken() {
       try {
         const res = await fetch("/api/plaid/create-link-token", {
@@ -118,6 +122,18 @@ export default function PlaidLink({
       toast.error("Failed to link account. Please try again.", { id: toastId });
     }
   }, [onLinkSuccess]);
+
+  if (isDemo) {
+    return (
+      <button
+        disabled
+        title="Bank linking is disabled in demo mode"
+        className="rounded-lg bg-primary/60 px-4 py-2 text-sm font-medium text-primary-foreground cursor-not-allowed opacity-60"
+      >
+        Link Bank Account
+      </button>
+    );
+  }
 
   if (linkToken) {
     return <PlaidLinkButton linkToken={linkToken} onSuccess={onSuccess} />;
