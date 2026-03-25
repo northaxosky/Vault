@@ -6,6 +6,11 @@ import { prisma } from "./prisma";
 import authConfig from "./auth.config";
 import { isDemoMode } from "./demo";
 import { getDemoSession } from "./demo-auth";
+import { encrypt } from "./encryption";
+
+function encryptToken(value: string | null | undefined): string | null {
+  return value ? encrypt(value) : null;
+}
 
 let _nextAuth: ReturnType<typeof NextAuth> | null = null;
 
@@ -80,10 +85,10 @@ function getNextAuth() {
             await prisma.oAuthAccount.update({
               where: { id: existingOAuth.id },
               data: {
-                accessToken: account.access_token ?? null,
-                refreshToken: account.refresh_token ?? null,
+                accessToken: encryptToken(account.access_token),
+                refreshToken: encryptToken(account.refresh_token),
                 expiresAt: account.expires_at ?? null,
-                idToken: account.id_token ?? null,
+                idToken: encryptToken(account.id_token),
               },
             });
             user.id = existingOAuth.user.id;
@@ -101,12 +106,12 @@ function getNextAuth() {
                 provider: account.provider,
                 providerAccountId: account.providerAccountId,
                 type: account.type ?? "oidc",
-                accessToken: account.access_token ?? null,
-                refreshToken: account.refresh_token ?? null,
+                accessToken: encryptToken(account.access_token),
+                refreshToken: encryptToken(account.refresh_token),
                 expiresAt: account.expires_at ?? null,
                 tokenType: account.token_type ?? null,
                 scope: account.scope ?? null,
-                idToken: account.id_token ?? null,
+                idToken: encryptToken(account.id_token),
               },
             });
             if (!existingUser.emailVerified) {
@@ -129,12 +134,12 @@ function getNextAuth() {
                   provider: account.provider,
                   providerAccountId: account.providerAccountId,
                   type: account.type ?? "oidc",
-                  accessToken: account.access_token ?? null,
-                  refreshToken: account.refresh_token ?? null,
+                  accessToken: encryptToken(account.access_token),
+                  refreshToken: encryptToken(account.refresh_token),
                   expiresAt: account.expires_at ?? null,
                   tokenType: account.token_type ?? null,
                   scope: account.scope ?? null,
-                  idToken: account.id_token ?? null,
+                  idToken: encryptToken(account.id_token),
                 },
               },
             },
