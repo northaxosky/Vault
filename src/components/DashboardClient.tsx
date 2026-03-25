@@ -25,6 +25,8 @@ import SavingsGoalsCard from "@/components/dashboard/SavingsGoalsCard";
 import BudgetOverviewCard from "@/components/dashboard/BudgetOverviewCard";
 import DebtSummaryCard from "@/components/dashboard/DebtSummaryCard";
 import ActivityHeatmapCard from "@/components/dashboard/ActivityHeatmapCard";
+import StockWatchlistCard from "@/components/dashboard/StockWatchlistCard";
+import QuickLinksCard from "@/components/dashboard/QuickLinksCard";
 import type { WidgetId } from "@/lib/widgets";
 
 // --- Types ---
@@ -617,6 +619,8 @@ export default function DashboardClient({
           {widgets.includes("budget-overview") && <BudgetOverviewCard />}
           {widgets.includes("debt-summary") && <DebtSummaryCard />}
           {widgets.includes("activity-heatmap") && <ActivityHeatmapCard />}
+          {widgets.includes("stock-watchlist") && <StockWatchlistCard />}
+          {widgets.includes("quick-links") && <QuickLinksCard />}
         </div>
       )}
 
