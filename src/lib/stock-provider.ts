@@ -160,7 +160,7 @@ async function finnhubQuotes(tickers: string[]): Promise<StockQuote[]> {
 
 // --- Provider Selection ---
 
-function useFinnhub(): boolean {
+function hasFinnhubKey(): boolean {
   return !!process.env.FINNHUB_API_KEY;
 }
 
@@ -175,7 +175,7 @@ const provider: StockProvider = {
     const cached = getCached<TickerSearchResult[]>(cacheKey);
     if (cached) return cached;
 
-    const results = useFinnhub() ? await finnhubSearch(query) : await yahooSearch(query);
+    const results = hasFinnhubKey() ? await finnhubSearch(query) : await yahooSearch(query);
     setCache(cacheKey, results, SEARCH_TTL);
     return results;
   },
@@ -185,7 +185,7 @@ const provider: StockProvider = {
     const cached = getCached<StockQuote>(cacheKey);
     if (cached) return cached;
 
-    const quote = useFinnhub() ? await finnhubQuote(ticker) : await yahooQuote(ticker);
+    const quote = hasFinnhubKey() ? await finnhubQuote(ticker) : await yahooQuote(ticker);
     if (quote) setCache(cacheKey, quote, QUOTE_TTL);
     return quote;
   },
@@ -204,7 +204,7 @@ const provider: StockProvider = {
     }
 
     if (uncached.length > 0) {
-      const fresh = useFinnhub() ? await finnhubQuotes(uncached) : await yahooQuotes(uncached);
+      const fresh = hasFinnhubKey() ? await finnhubQuotes(uncached) : await yahooQuotes(uncached);
       for (const quote of fresh) {
         setCache(`quote:${quote.ticker.toUpperCase()}`, quote, QUOTE_TTL);
         results.push(quote);
