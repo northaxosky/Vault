@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { plaidClient } from "@/lib/plaid";
+import { plaidClient, logPlaidError } from "@/lib/plaid";
 import { prisma } from "@/lib/prisma";
 import { decrypt } from "@/lib/encryption";
 import { sendAlertEmail } from "@/lib/email";
@@ -325,9 +325,10 @@ export async function POST() {
             });
           }
         }
-      } catch {
+      } catch (recurringError) {
         // Expected to fail if the Plaid item doesn't support transactions
-        // or if the feature isn't available in sandbox. Silently skip.
+        // or if the feature isn't available in sandbox.
+        logPlaidError("sync/recurring (non-fatal)", recurringError);
       }
 
       // --- Investment holdings sync ---
@@ -417,8 +418,9 @@ export async function POST() {
             },
           });
         }
-      } catch {
-        // Expected for items without investment access — silently skip
+      } catch (investError) {
+        // Expected for items without investment access — log for visibility
+        logPlaidError("sync/investments (non-fatal)", investError);
       }
     }
 
@@ -591,7 +593,7 @@ export async function POST() {
       removed: totalRemoved,
     });
   } catch (error) {
-    console.error("Error syncing:", error);
+    logPlaidError("sync", error);
     return NextResponse.json(
       { error: "Failed to sync" },
       { status: 500 }

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { CountryCode } from "plaid";
 import { auth } from "@/lib/auth";
-import { plaidClient } from "@/lib/plaid";
+import { plaidClient, extractPlaidError, logPlaidError } from "@/lib/plaid";
 import { prisma } from "@/lib/prisma";
 import { encrypt } from "@/lib/encryption";
 
@@ -94,10 +94,21 @@ export async function POST(request: Request) {
       accountCount: accountsResponse.data.accounts.length,
     });
   } catch (error) {
-    console.error("Error exchanging token:", error);
+    logPlaidError("exchange-token", error);
+    const detail = extractPlaidError(error);
     return NextResponse.json(
-      { error: "Failed to link account" },
-      { status: 500 }
+      {
+        error: "Failed to link account",
+        plaidError: detail
+          ? {
+              errorType: detail.errorType,
+              errorCode: detail.errorCode,
+              errorMessage: detail.errorMessage,
+              displayMessage: detail.displayMessage,
+            }
+          : undefined,
+      },
+      { status: detail?.statusCode || 500 }
     );
   }
 }

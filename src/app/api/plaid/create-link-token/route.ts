@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { plaidClient } from "@/lib/plaid";
+import { plaidClient, extractPlaidError, logPlaidError } from "@/lib/plaid";
 import { Products, CountryCode } from "plaid";
 import { isDemoMode } from "@/lib/demo";
 
@@ -39,10 +39,21 @@ export async function POST() {
       linkToken: response.data.link_token,
     });
   } catch (error) {
-    console.error("Error creating link token:", error);
+    logPlaidError("create-link-token", error);
+    const detail = extractPlaidError(error);
     return NextResponse.json(
-      { error: "Failed to create link token" },
-      { status: 500 }
+      {
+        error: "Failed to create link token",
+        plaidError: detail
+          ? {
+              errorType: detail.errorType,
+              errorCode: detail.errorCode,
+              errorMessage: detail.errorMessage,
+              displayMessage: detail.displayMessage,
+            }
+          : undefined,
+      },
+      { status: detail?.statusCode || 500 }
     );
   }
 }
