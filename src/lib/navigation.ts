@@ -8,6 +8,7 @@ import {
   Goal,
   LineChart,
   BarChart3,
+  Eye,
   Settings,
   type LucideIcon,
 } from "lucide-react";
@@ -23,6 +24,7 @@ export const navItems: NavItem[] = [
   { href: "/dashboard/accounts", label: "Accounts", icon: Landmark },
   { href: "/dashboard/transactions", label: "Transactions", icon: ArrowLeftRight },
   { href: "/dashboard/investments", label: "Investments", icon: TrendingUp },
+  { href: "/dashboard/watchlist", label: "Watchlist", icon: Eye },
   { href: "/dashboard/budgets", label: "Budgets", icon: Target },
   { href: "/dashboard/subscriptions", label: "Subscriptions", icon: Repeat },
   { href: "/dashboard/goals", label: "Goals", icon: Goal },
