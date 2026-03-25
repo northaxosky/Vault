@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { usePlaidLink } from "react-plaid-link";
+import { toast } from "sonner";
 
 /**
  * Inner component that only mounts once we have a link token.
@@ -63,7 +64,6 @@ export default function PlaidLink({
   onLinkSuccess?: () => void;
 }) {
   const [linkToken, setLinkToken] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchLinkToken() {
@@ -77,11 +77,11 @@ export default function PlaidLink({
           setLinkToken(data.linkToken);
         } else {
           console.error("[Plaid Link] create-link-token failed:", data);
-          setMessage(data.plaidError?.errorMessage || data.error || "Failed to initialize Plaid Link");
+          toast.error(data.plaidError?.errorMessage || data.error || "Failed to initialize Plaid Link");
         }
       } catch (error) {
         console.error("Failed to fetch link token:", error);
-        setMessage("Failed to connect to Plaid. Check your configuration.");
+        toast.error("Failed to connect to Plaid. Check your configuration.");
       }
     }
 
@@ -89,7 +89,7 @@ export default function PlaidLink({
   }, []);
 
   const onSuccess = useCallback(async (publicToken: string) => {
-    setMessage(null);
+    const toastId = toast.loading("Linking account...");
 
     try {
       const res = await fetch("/api/plaid/exchange-token", {
@@ -101,45 +101,35 @@ export default function PlaidLink({
       const data = await res.json();
 
       if (data.success) {
-        setMessage(
-          `Connected to ${data.institutionName}! Syncing transactions...`
-        );
+        toast.loading("Syncing transactions...", { id: toastId });
 
-        // Trigger initial transaction sync for the newly linked bank.
-        // This runs before calling onLinkSuccess so the dashboard has
-        // fresh data when it refreshes.
         await fetch("/api/plaid/sync", { method: "POST" });
 
-        setMessage(
-          `Connected to ${data.institutionName}! ${data.accountCount} account(s) linked.`
+        toast.success(
+          `Connected to ${data.institutionName}! ${data.accountCount} account(s) linked.`,
+          { id: toastId }
         );
         onLinkSuccess?.();
       } else {
-        setMessage("Something went wrong linking your account.");
+        toast.error("Something went wrong linking your account.", { id: toastId });
       }
     } catch (error) {
       console.error("Error exchanging token:", error);
-      setMessage("Failed to link account. Please try again.");
+      toast.error("Failed to link account. Please try again.", { id: toastId });
     }
   }, [onLinkSuccess]);
 
-  return (
-    <div>
-      {linkToken ? (
-        <PlaidLinkButton linkToken={linkToken} onSuccess={onSuccess} />
-      ) : (
-        <button
-          disabled={true}
-          suppressHydrationWarning
-          className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground opacity-50"
-        >
-          Link Bank Account
-        </button>
-      )}
+  if (linkToken) {
+    return <PlaidLinkButton linkToken={linkToken} onSuccess={onSuccess} />;
+  }
 
-      {message && (
-        <p className="mt-3 text-sm text-muted-foreground">{message}</p>
-      )}
-    </div>
+  return (
+    <button
+      disabled={true}
+      suppressHydrationWarning
+      className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground opacity-50"
+    >
+      Link Bank Account
+    </button>
   );
 }
