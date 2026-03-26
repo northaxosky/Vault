@@ -7,7 +7,7 @@ import { validatePassword, BCRYPT_ROUNDS } from "@/lib/validation";
 export async function POST(request: Request) {
   try {
     const ip = request.headers.get("x-forwarded-for") ?? "unknown";
-    const { success, remaining, resetAt } = rateLimit(`auth:${ip}`, {
+    const { success, remaining } = rateLimit(`auth:${ip}`, {
       max: 5,
       windowMs: 15 * 60 * 1000,
     });
