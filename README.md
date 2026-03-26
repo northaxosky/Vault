@@ -9,6 +9,7 @@
 
 ## Features
 
+- Testing
 - **Banking** — Link bank accounts via Plaid, auto-sync transactions
 - **Dashboard** — Net worth, cash & credit summaries, spending trends, category breakdown
 - **Budgets** — Per-category monthly budgets with visual tracking
