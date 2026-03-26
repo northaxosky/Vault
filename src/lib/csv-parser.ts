@@ -21,7 +21,7 @@ export interface CsvParseResult {
   skippedRows: number;
 }
 
-export type CsvFormatId = "first-tech" | "amex" | "chase" | "generic";
+export type CsvFormatId = "first-tech" | "amex" | "chase" | "robinhood" | "generic";
 
 interface CsvFormat {
   id: CsvFormatId;
@@ -107,10 +107,17 @@ function parseDate(dateStr: string): Date | null {
 
 function parseAmount(amountStr: string): number | null {
   if (!amountStr?.trim()) return null;
+  let s = amountStr.trim();
+  // Detect parenthetical negatives: ($1,234.56) or (1234.56)
+  const isParenNegative = s.startsWith("(") && s.endsWith(")");
+  if (isParenNegative) {
+    s = s.slice(1, -1);
+  }
   // Remove currency symbols, commas, spaces
-  const cleaned = amountStr.trim().replace(/[$,\s]/g, "");
+  const cleaned = s.replace(/[$,\s]/g, "");
   const num = parseFloat(cleaned);
-  return isNaN(num) ? null : num;
+  if (isNaN(num)) return null;
+  return isParenNegative ? -num : num;
 }
 
 // ---------------------------------------------------------------------------
@@ -194,6 +201,74 @@ const CHASE_FORMAT: CsvFormat = {
   },
 };
 
+// Robinhood Trans Code → category mapping
+const ROBINHOOD_TRANS_CATEGORY: Record<string, string> = {
+  buy: "TRANSFER_OUT",
+  sell: "TRANSFER_IN",
+  cdiv: "INCOME",
+  ach: "TRANSFER_IN",
+  itrf: "TRANSFER_OUT",
+  mtch: "INCOME",
+  pfir: "INCOME",
+  abip: "INCOME",
+  noa: "GOVERNMENT_AND_NON_PROFIT",
+};
+
+/** Strip CUSIP / dividend reinvestment lines from Robinhood Description */
+function cleanRobinhoodDescription(description: string): string {
+  return description
+    .split("\n")
+    .filter((l) => !l.trim().startsWith("CUSIP:") && l.trim() !== "Dividend Reinvestment")
+    .join(" ")
+    .trim();
+}
+
+const ROBINHOOD_FORMAT: CsvFormat = {
+  id: "robinhood",
+  label: "Robinhood",
+  headerFingerprint: ["activity date", "process date", "settle date", "instrument", "trans code"],
+  parse(row) {
+    const date = parseDate(row["Activity Date"]);
+    if (!date) return null;
+
+    const transCode = (row["Trans Code"] || "").trim();
+    const instrument = (row["Instrument"] || "").trim();
+    const description = (row["Description"] || "").trim();
+    const amountStr = (row["Amount"] || "").trim();
+
+    // Skip disclaimer rows (extra columns or no meaningful data)
+    if (!transCode && !instrument && !amountStr) return null;
+
+    // Skip stock-only transfers with no dollar amount (ACATI for shares, REC)
+    const amount = parseAmount(amountStr);
+    if (amount === null || amount === 0) {
+      // Allow rows that are pure position transfers (no $ value) to be skipped
+      if (!amountStr || amountStr === "") return null;
+    }
+
+    // Build descriptive name
+    const cleanDesc = cleanRobinhoodDescription(description);
+    const name = instrument
+      ? `${instrument} — ${cleanDesc}`
+      : cleanDesc || transCode;
+
+    // Category from trans code
+    const category = ROBINHOOD_TRANS_CATEGORY[transCode.toLowerCase()] ?? null;
+
+    // Robinhood: negative amounts (parenthetical) = money out, positive = money in
+    // App convention: positive = spending, negative = income → flip sign
+    return {
+      date,
+      name,
+      merchantName: null,
+      amount: -amount,
+      category,
+      balance: null,
+      rawRow: row,
+    };
+  },
+};
+
 const GENERIC_FORMAT: CsvFormat = {
   id: "generic",
   label: "Generic CSV",
@@ -229,7 +304,7 @@ const GENERIC_FORMAT: CsvFormat = {
 };
 
 // Order matters — specific formats first, generic last
-const FORMATS: CsvFormat[] = [FIRST_TECH_FORMAT, CHASE_FORMAT, AMEX_FORMAT, GENERIC_FORMAT];
+const FORMATS: CsvFormat[] = [FIRST_TECH_FORMAT, CHASE_FORMAT, AMEX_FORMAT, ROBINHOOD_FORMAT, GENERIC_FORMAT];
 
 // ---------------------------------------------------------------------------
 // CSV text parser
@@ -238,14 +313,16 @@ const FORMATS: CsvFormat[] = [FIRST_TECH_FORMAT, CHASE_FORMAT, AMEX_FORMAT, GENE
 export function parseCsvText(text: string): { headers: string[]; rows: Record<string, string>[] } {
   // Strip BOM
   const cleaned = text.replace(/^\uFEFF/, "");
-  const lines = cleaned.split(/\r?\n/).filter((l) => l.trim().length > 0);
-  if (lines.length < 2) return { headers: [], rows: [] };
 
-  const headers = parseCsvLine(lines[0]);
+  // Split into logical CSV records (handles multi-line quoted fields)
+  const records = splitCsvRecords(cleaned);
+  if (records.length < 2) return { headers: [], rows: [] };
+
+  const headers = parseCsvLine(records[0]);
   const rows: Record<string, string>[] = [];
 
-  for (let i = 1; i < lines.length; i++) {
-    const values = parseCsvLine(lines[i]);
+  for (let i = 1; i < records.length; i++) {
+    const values = parseCsvLine(records[i]);
     const row: Record<string, string> = {};
     for (let j = 0; j < headers.length; j++) {
       row[headers[j]] = values[j] ?? "";
@@ -254,6 +331,44 @@ export function parseCsvText(text: string): { headers: string[]; rows: Record<st
   }
 
   return { headers, rows };
+}
+
+/**
+ * Split CSV text into logical records, merging physical lines that are part
+ * of a multi-line quoted field. Returns an array of complete CSV record strings.
+ */
+function splitCsvRecords(text: string): string[] {
+  const lines = text.split(/\r?\n/);
+  const records: string[] = [];
+  let current = "";
+  let inQuotes = false;
+
+  for (const line of lines) {
+    if (current && inQuotes) {
+      // Continuation of a multi-line quoted field
+      current += "\n" + line;
+    } else {
+      // Start of a new record
+      if (current) records.push(current);
+      current = line;
+    }
+
+    // Count unescaped quotes to track state
+    for (let i = 0; i < line.length; i++) {
+      if (line[i] === '"') {
+        if (inQuotes && i + 1 < line.length && line[i + 1] === '"') {
+          i++; // skip escaped quote
+        } else {
+          inQuotes = !inQuotes;
+        }
+      }
+    }
+  }
+
+  if (current) records.push(current);
+
+  // Filter empty records
+  return records.filter((r) => r.trim().length > 0);
 }
 
 /** Parse a single CSV line, handling quoted fields with commas and escaped quotes */

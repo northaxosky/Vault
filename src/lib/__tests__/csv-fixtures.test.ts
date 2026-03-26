@@ -223,3 +223,128 @@ describe("Cross-fixture tests", () => {
     });
   }
 });
+
+// ---------------------------------------------------------------------------
+// Robinhood fixture
+// ---------------------------------------------------------------------------
+
+describe("Robinhood fixture (robinhood-sample.csv)", () => {
+  const csv = loadFixture("robinhood-sample.csv");
+  const result = parseCsv(csv);
+
+  it("should auto-detect format as robinhood", () => {
+    expect(result.format).toBe("robinhood");
+  });
+
+  it("should parse 12 transactions with 0 errors and at least 1 skipped row", () => {
+    expect(result.transactions).toHaveLength(12);
+    expect(result.errors).toHaveLength(0);
+    expect(result.skippedRows).toBeGreaterThanOrEqual(1);
+  });
+
+  it("should parse VTI Buy: date 2026-03-20, name contains VTI, amount 162.71, category TRANSFER_OUT", () => {
+    const tx = result.transactions.find((t) => t.name.includes("VTI"));
+    expect(tx).toBeDefined();
+    expect(toDateStr(tx!.date)).toBe("2026-03-20");
+    expect(tx!.amount).toBe(162.71);
+    expect(tx!.category).toBe("TRANSFER_OUT");
+  });
+
+  it("should parse AAPL Buy: name contains AAPL, amount 891.60", () => {
+    const tx = result.transactions.find((t) => t.name.includes("AAPL"));
+    expect(tx).toBeDefined();
+    expect(tx!.amount).toBe(891.6);
+  });
+
+  it("should parse VXUS Buy (dividend reinvestment) with CUSIP/reinvestment lines stripped", () => {
+    const buys = result.transactions.filter(
+      (t) => t.name.includes("VXUS") && t.amount > 0
+    );
+    expect(buys).toHaveLength(1);
+    expect(buys[0].name).not.toContain("CUSIP");
+    expect(buys[0].name).not.toContain("Dividend Reinvestment");
+    expect(buys[0].amount).toBe(10.89);
+  });
+
+  it("should parse VXUS Dividend: name contains Cash Div, amount -10.89, category INCOME", () => {
+    const tx = result.transactions.find((t) => t.name.includes("Cash Div"));
+    expect(tx).toBeDefined();
+    expect(tx!.amount).toBe(-10.89);
+    expect(tx!.category).toBe("INCOME");
+  });
+
+  it("should parse two ACH deposits with amounts -4500 and -500, category TRANSFER_IN", () => {
+    const achs = result.transactions.filter((t) =>
+      t.name.includes("ACH Deposit")
+    );
+    expect(achs).toHaveLength(2);
+    const amounts = achs.map((t) => t.amount).sort((a, b) => a - b);
+    expect(amounts).toEqual([-4500, -500]);
+    for (const tx of achs) {
+      expect(tx.category).toBe("TRANSFER_IN");
+    }
+  });
+
+  it("should parse ITRF: name contains Transfer from Brokerage, amount 7000, category TRANSFER_OUT", () => {
+    const tx = result.transactions.find((t) =>
+      t.name.includes("Transfer from Brokerage")
+    );
+    expect(tx).toBeDefined();
+    expect(tx!.amount).toBe(7000);
+    expect(tx!.category).toBe("TRANSFER_OUT");
+  });
+
+  it("should parse MISC: amount -0.53, category null", () => {
+    const tx = result.transactions.find((t) =>
+      t.name.includes("Crypto deposit bonus")
+    );
+    expect(tx).toBeDefined();
+    expect(tx!.amount).toBe(-0.53);
+    expect(tx!.category).toBeNull();
+  });
+
+  it("should parse MTCH: amount -210, category INCOME", () => {
+    const tx = result.transactions.find((t) =>
+      t.name.includes("Interest on Contribution")
+    );
+    expect(tx).toBeDefined();
+    expect(tx!.amount).toBe(-210);
+    expect(tx!.category).toBe("INCOME");
+  });
+
+  it("should parse PFIR: amount -7000, category INCOME", () => {
+    const tx = result.transactions.find((t) =>
+      t.name.includes("Prior Year Contribution")
+    );
+    expect(tx).toBeDefined();
+    expect(tx!.amount).toBe(-7000);
+    expect(tx!.category).toBe("INCOME");
+  });
+
+  it("should parse ABIP: amount -551.83, category INCOME", () => {
+    const tx = result.transactions.find((t) =>
+      t.name.includes("ACAT In Bonus")
+    );
+    expect(tx).toBeDefined();
+    expect(tx!.amount).toBe(-551.83);
+    expect(tx!.category).toBe("INCOME");
+  });
+
+  it("should parse NOA (IRS): amount 208, category GOVERNMENT_AND_NON_PROFIT", () => {
+    const tx = result.transactions.find((t) => t.name.includes("IRS"));
+    expect(tx).toBeDefined();
+    expect(tx!.amount).toBe(208);
+    expect(tx!.category).toBe("GOVERNMENT_AND_NON_PROFIT");
+  });
+
+  it("should strip CUSIP lines from all transaction names", () => {
+    for (const tx of result.transactions) {
+      expect(tx.name).not.toContain("CUSIP:");
+    }
+  });
+
+  it("should skip ACATI row (no amount for stock transfer)", () => {
+    const acati = result.transactions.find((t) => t.name.includes("ACATI"));
+    expect(acati).toBeUndefined();
+  });
+});
