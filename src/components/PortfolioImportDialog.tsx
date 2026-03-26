@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { X, Upload, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -160,12 +160,13 @@ export default function PortfolioImportDialog({
     onClose();
   };
 
-  if (!open) return null;
+  useEffect(() => {
+    if (open) {
+      handleOpen();
+    }
+  }, [open, handleOpen]);
 
-  // Reset on first render when open
-  if (step === "upload" && !file && !preview && !result) {
-    handleOpen();
-  }
+  if (!open) return null;
 
   const formatCurrency = (val: number) =>
     new Intl.NumberFormat("en-US", {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { X, Upload, FileText, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -230,12 +230,14 @@ export default function CsvImportDialog({ open, onClose, onSuccess }: CsvImportD
     onClose();
   };
 
-  if (!open) return null;
+  // Reset and fetch data when dialog opens
+  useEffect(() => {
+    if (open) {
+      handleOpen();
+    }
+  }, [open, handleOpen]);
 
-  // Trigger data fetch on first render when open
-  if (step === "account" && manualAccounts.length === 0 && formats.length === 0) {
-    handleOpen();
-  }
+  if (!open) return null;
 
   // All existing accounts (manual + Plaid) flattened for selection
   const allAccounts = manualAccounts.flatMap((inst) =>
