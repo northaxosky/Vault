@@ -9,6 +9,7 @@ import {
   LineChart,
   BarChart3,
   Eye,
+  FileDown,
   Settings,
   type LucideIcon,
 } from "lucide-react";
@@ -30,6 +31,7 @@ export const navItems: NavItem[] = [
   { href: "/dashboard/goals", label: "Goals", icon: Goal },
   { href: "/dashboard/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/dashboard/insights", label: "Insights", icon: LineChart },
+  { href: "/dashboard/imports", label: "Imports", icon: FileDown },
 ];
 
 export const settingsNavItem: NavItem = {
