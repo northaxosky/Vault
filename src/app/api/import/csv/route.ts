@@ -203,7 +203,8 @@ export async function POST(request: Request) {
           where: { id: accountId },
           select: { currentBalance: true },
         });
-        const newBalance = (currentAccount?.currentBalance ?? 0) + netAmount;
+        const currentBal = Number(currentAccount?.currentBalance ?? 0);
+        const newBalance = currentBal + netAmount;
         await prisma.account.update({
           where: { id: accountId },
           data: { currentBalance: Math.round(newBalance * 100) / 100 },
