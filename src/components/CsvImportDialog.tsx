@@ -126,7 +126,7 @@ export default function CsvImportDialog({ open, onClose, onSuccess }: CsvImportD
     }
   };
 
-  // Handle file selection and generate preview
+  // Handle file selection and generate server-side preview
   const handleFileSelect = async (selectedFile: File) => {
     setFile(selectedFile);
     setError(null);
@@ -136,49 +136,35 @@ export default function CsvImportDialog({ open, onClose, onSuccess }: CsvImportD
       return;
     }
 
-    // Quick client-side preview
     try {
-      const text = await selectedFile.text();
-      const lines = text.split(/\r?\n/).filter((l) => l.trim());
-      if (lines.length < 2) {
-        setError("CSV file appears empty");
+      setLoading(true);
+      const formData = new FormData();
+      formData.append("file", selectedFile);
+      if (formatOverride) formData.append("format", formatOverride);
+
+      const res = await fetch("/api/import/csv/preview", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || "Failed to parse CSV");
+        setLoading(false);
         return;
       }
 
-      // Parse first few rows for preview
-      const headers = lines[0];
-      const sampleLines = lines.slice(1, 6);
-      const headerCols = headers.split(",").map((h) => h.replace(/"/g, "").trim());
-
-      // Simple auto-detect for preview label
-      let detectedFormat = "generic";
-      const lowerHeaders = headerCols.map((h) => h.toLowerCase());
-      if (lowerHeaders.includes("transaction id") && lowerHeaders.includes("posting date")) {
-        detectedFormat = "first-tech";
-      } else if (lowerHeaders.length === 3 && lowerHeaders.includes("date") && lowerHeaders.includes("description") && lowerHeaders.includes("amount")) {
-        detectedFormat = "amex";
-      } else if (lowerHeaders.includes("transaction date") && lowerHeaders.includes("category")) {
-        detectedFormat = "chase";
-      }
-
-      const sampleRows = sampleLines.map((line) => {
-        const cols = line.split(",").map((c) => c.replace(/"/g, "").trim());
-        return {
-          date: cols[0] || "",
-          name: cols[1] || cols[headerCols.indexOf("Description")] || "",
-          amount: parseFloat(cols[headerCols.indexOf("Amount") !== -1 ? headerCols.indexOf("Amount") : cols.length - 1]?.replace(/[$,]/g, "") || "0"),
-          category: null as string | null,
-        };
-      });
-
       setPreview({
-        format: formatOverride || detectedFormat,
-        sampleRows,
-        totalRows: lines.length - 1,
+        format: data.format,
+        sampleRows: data.sampleRows,
+        totalRows: data.totalRows,
       });
       setStep("preview");
     } catch {
       setError("Failed to read file");
+    } finally {
+      setLoading(false);
     }
   };
 
