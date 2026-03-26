@@ -21,12 +21,19 @@ interface FormatOption {
   label: string;
 }
 
-type Step = "account" | "upload" | "preview" | "importing" | "done";
+type Step = "account" | "upload" | "preview" | "importing" | "done" | "portfolio-preview" | "portfolio-importing" | "portfolio-done";
 
 interface PreviewData {
   format: string;
   sampleRows: { date: string; name: string; amount: number; category: string | null }[];
   totalRows: number;
+}
+
+interface PortfolioPreviewData {
+  accounts: string[];
+  positions: { accountName: string; ticker: string; quantity: number; currentValue: number; costBasis: number }[];
+  totalPositions: number;
+  totalValue: number;
 }
 
 interface ImportResult {
@@ -37,6 +44,12 @@ interface ImportResult {
   format: string;
 }
 
+interface PortfolioImportResult {
+  accounts: number;
+  positions: number;
+  securities: number;
+}
+
 export default function CsvImportDialog({ open, onClose, onSuccess }: CsvImportDialogProps) {
   const [step, setStep] = useState<Step>("account");
   const [manualAccounts, setManualAccounts] = useState<ManualAccount[]>([]);
@@ -45,7 +58,9 @@ export default function CsvImportDialog({ open, onClose, onSuccess }: CsvImportD
   const [file, setFile] = useState<File | null>(null);
   const [formatOverride, setFormatOverride] = useState<string>("");
   const [preview, setPreview] = useState<PreviewData | null>(null);
+  const [portfolioPreview, setPortfolioPreview] = useState<PortfolioPreviewData | null>(null);
   const [result, setResult] = useState<ImportResult | null>(null);
+  const [portfolioResult, setPortfolioResult] = useState<PortfolioImportResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -78,12 +93,14 @@ export default function CsvImportDialog({ open, onClose, onSuccess }: CsvImportD
 
   // Reset state when dialog opens
   const handleOpen = useCallback(() => {
-    setStep("account");
+    setStep("upload");
     setSelectedAccountId("");
     setFile(null);
     setFormatOverride("");
     setPreview(null);
+    setPortfolioPreview(null);
     setResult(null);
+    setPortfolioResult(null);
     setError(null);
     setShowNewAccount(false);
     setNewInstitution("");
@@ -118,7 +135,7 @@ export default function CsvImportDialog({ open, onClose, onSuccess }: CsvImportD
       setSelectedAccountId(data.accountId);
       setShowNewAccount(false);
       await fetchData();
-      setStep("upload");
+      setStep("preview");
     } catch {
       setError("Failed to create account");
     } finally {
@@ -155,12 +172,23 @@ export default function CsvImportDialog({ open, onClose, onSuccess }: CsvImportD
         return;
       }
 
-      setPreview({
-        format: data.format,
-        sampleRows: data.sampleRows,
-        totalRows: data.totalRows,
-      });
-      setStep("preview");
+      // Portfolio file detected — skip account selection, go straight to portfolio preview
+      if (data.type === "portfolio") {
+        setPortfolioPreview({
+          accounts: data.accounts,
+          positions: data.positions,
+          totalPositions: data.totalPositions,
+          totalValue: data.totalValue,
+        });
+        setStep("portfolio-preview");
+      } else {
+        setPreview({
+          format: data.format,
+          sampleRows: data.sampleRows,
+          totalRows: data.totalRows,
+        });
+        setStep("account");
+      }
     } catch {
       setError("Failed to read file");
     } finally {
@@ -207,10 +235,48 @@ export default function CsvImportDialog({ open, onClose, onSuccess }: CsvImportD
     }
   };
 
+  // Execute portfolio import
+  const handlePortfolioImport = async () => {
+    if (!file) return;
+
+    setStep("portfolio-importing");
+    setError(null);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("/api/import/portfolio", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || "Portfolio import failed");
+        setStep("portfolio-preview");
+        return;
+      }
+
+      setPortfolioResult({
+        accounts: data.accounts ?? 0,
+        positions: data.positions ?? 0,
+        securities: data.securities ?? 0,
+      });
+      setStep("portfolio-done");
+    } catch {
+      setError("Portfolio import failed. Please try again.");
+      setStep("portfolio-preview");
+    }
+  };
+
   // Close and trigger refresh
   const handleDone = () => {
     if (result && result.imported > 0) {
       toast.success(`Imported ${result.imported} transaction${result.imported !== 1 ? "s" : ""}`);
+      onSuccess();
+    } else if (portfolioResult && portfolioResult.positions > 0) {
+      toast.success(`Imported ${portfolioResult.positions} position${portfolioResult.positions !== 1 ? "s" : ""}`);
       onSuccess();
     }
     onClose();
@@ -247,16 +313,30 @@ export default function CsvImportDialog({ open, onClose, onSuccess }: CsvImportD
 
         {/* Step indicator */}
         <div className="mt-4 flex gap-2">
-          {["account", "upload", "preview", "done"].map((s, i) => (
-            <div
-              key={s}
-              className={`h-1 flex-1 rounded-full ${
-                ["account", "upload", "preview", "importing", "done"].indexOf(step) >= i
-                  ? "bg-primary"
-                  : "bg-muted"
-              }`}
-            />
-          ))}
+          {step.startsWith("portfolio") ? (
+            // Portfolio flow: upload → preview → done (3 steps)
+            ["upload", "preview", "done"].map((s, i) => {
+              const portfolioStepIndex = ["portfolio-preview", "portfolio-importing", "portfolio-done"].indexOf(step);
+              return (
+                <div
+                  key={s}
+                  className={`h-1 flex-1 rounded-full ${portfolioStepIndex >= i ? "bg-primary" : "bg-muted"}`}
+                />
+              );
+            })
+          ) : (
+            // Transaction flow: upload → account → preview → done (4 steps)
+            ["upload", "account", "preview", "done"].map((s, i) => (
+              <div
+                key={s}
+                className={`h-1 flex-1 rounded-full ${
+                  ["upload", "account", "preview", "importing", "done"].indexOf(step) >= i
+                    ? "bg-primary"
+                    : "bg-muted"
+                }`}
+              />
+            ))
+          )}
         </div>
 
         {/* Error banner */}
@@ -270,8 +350,16 @@ export default function CsvImportDialog({ open, onClose, onSuccess }: CsvImportD
         {/* Step: Account selection */}
         {step === "account" && (
           <div className="mt-6 space-y-4">
+            {preview && (
+              <div className="flex items-center gap-2 rounded-lg bg-primary/10 px-3 py-2 text-sm">
+                <FileText className="h-4 w-4 text-primary" />
+                <span className="text-foreground">
+                  Detected <span className="font-medium">{preview.format}</span> format — {preview.totalRows} transaction{preview.totalRows !== 1 ? "s" : ""}
+                </span>
+              </div>
+            )}
             <p className="text-sm text-muted-foreground">
-              Select an account to import transactions into, or create a new one.
+              Select an account to import into, or create a new one.
             </p>
 
             {allAccounts.length > 0 && !showNewAccount && (
@@ -281,7 +369,7 @@ export default function CsvImportDialog({ open, onClose, onSuccess }: CsvImportD
                     key={acct.id}
                     onClick={() => {
                       setSelectedAccountId(acct.id);
-                      setStep("upload");
+                      setStep("preview");
                     }}
                     className="flex w-full items-center gap-3 rounded-lg border border-border px-4 py-3 text-left text-sm transition-colors hover:bg-accent"
                   >
@@ -352,7 +440,7 @@ export default function CsvImportDialog({ open, onClose, onSuccess }: CsvImportD
         {step === "upload" && (
           <div className="mt-6 space-y-4">
             <p className="text-sm text-muted-foreground">
-              Upload a CSV file exported from your bank. We auto-detect the format.
+              Upload a CSV file from your bank or brokerage. We auto-detect whether it&apos;s transactions or portfolio positions.
             </p>
 
             <div
@@ -366,13 +454,24 @@ export default function CsvImportDialog({ open, onClose, onSuccess }: CsvImportD
               }}
               className="flex cursor-pointer flex-col items-center gap-3 rounded-lg border-2 border-dashed border-border px-6 py-10 transition-colors hover:border-primary hover:bg-accent/30"
             >
-              <Upload className="h-8 w-8 text-muted-foreground" />
-              <div className="text-center">
-                <p className="text-sm font-medium text-foreground">
-                  Drop CSV file here or click to browse
-                </p>
-                <p className="mt-1 text-xs text-muted-foreground">Max 5MB</p>
-              </div>
+              {loading ? (
+                <>
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <p className="text-sm text-muted-foreground">Analyzing file...</p>
+                </>
+              ) : (
+                <>
+                  <Upload className="h-8 w-8 text-muted-foreground" />
+                  <div className="text-center">
+                    <p className="text-sm font-medium text-foreground">
+                      Drop CSV file here or click to browse
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Supports First Tech, Amex, Chase, Robinhood, Fidelity &amp; more
+                    </p>
+                  </div>
+                </>
+              )}
             </div>
 
             <input
@@ -404,13 +503,6 @@ export default function CsvImportDialog({ open, onClose, onSuccess }: CsvImportD
                 </select>
               </div>
             )}
-
-            <button
-              onClick={() => setStep("account")}
-              className="text-sm text-muted-foreground hover:text-foreground"
-            >
-              ← Back
-            </button>
           </div>
         )}
 
@@ -452,10 +544,10 @@ export default function CsvImportDialog({ open, onClose, onSuccess }: CsvImportD
 
             <div className="flex gap-2">
               <button
-                onClick={() => setStep("upload")}
+                onClick={() => setStep("account")}
                 className="flex-1 rounded-md border border-border px-3 py-2 text-sm text-foreground transition-colors hover:bg-accent"
               >
-                ← Back
+                ← Change Account
               </button>
               <button
                 onClick={handleImport}
@@ -518,6 +610,98 @@ export default function CsvImportDialog({ open, onClose, onSuccess }: CsvImportD
                 </ul>
               </details>
             )}
+
+            <button
+              onClick={handleDone}
+              className="w-full rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/80"
+            >
+              Done
+            </button>
+          </div>
+        )}
+
+        {/* Step: Portfolio preview */}
+        {step === "portfolio-preview" && portfolioPreview && (
+          <div className="mt-6 space-y-4">
+            <div className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-primary" />
+              <p className="text-sm font-medium text-foreground">
+                Portfolio detected — {portfolioPreview.totalPositions} position{portfolioPreview.totalPositions !== 1 ? "s" : ""} across {portfolioPreview.accounts.length} account{portfolioPreview.accounts.length !== 1 ? "s" : ""}
+              </p>
+            </div>
+
+            <div className="text-sm text-muted-foreground">
+              Total value: <span className="font-medium text-foreground">${portfolioPreview.totalValue.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
+            </div>
+
+            <div className="max-h-48 overflow-auto rounded-lg border border-border">
+              <table className="w-full text-xs">
+                <thead className="sticky top-0 bg-muted">
+                  <tr>
+                    <th className="px-3 py-1.5 text-left font-medium">Ticker</th>
+                    <th className="px-3 py-1.5 text-right font-medium">Qty</th>
+                    <th className="px-3 py-1.5 text-right font-medium">Value</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {portfolioPreview.positions.map((p, i) => (
+                    <tr key={i}>
+                      <td className="px-3 py-1.5 font-mono">{p.ticker}</td>
+                      <td className="px-3 py-1.5 text-right">{p.quantity.toFixed(4)}</td>
+                      <td className="px-3 py-1.5 text-right">${p.currentValue.toLocaleString("en-US", { minimumFractionDigits: 2 })}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => { setStep("account"); setFile(null); setPortfolioPreview(null); }}
+                className="flex-1 rounded-md border border-border px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+              >
+                Back
+              </button>
+              <button
+                onClick={handlePortfolioImport}
+                className="flex-1 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/80"
+              >
+                Import Portfolio
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Step: Portfolio importing */}
+        {step === "portfolio-importing" && (
+          <div className="mt-6 flex flex-col items-center gap-3 py-8">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-sm text-muted-foreground">Importing portfolio positions...</p>
+          </div>
+        )}
+
+        {/* Step: Portfolio done */}
+        {step === "portfolio-done" && portfolioResult && (
+          <div className="mt-6 space-y-4">
+            <div className="flex items-center gap-2 text-emerald-500">
+              <CheckCircle2 className="h-5 w-5" />
+              <span className="font-medium">Portfolio imported successfully!</span>
+            </div>
+
+            <div className="space-y-2 rounded-lg border border-border p-3 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Accounts created</span>
+                <span className="font-medium text-foreground">{portfolioResult.accounts}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Positions imported</span>
+                <span className="font-medium text-foreground">{portfolioResult.positions}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Securities tracked</span>
+                <span className="font-medium text-foreground">{portfolioResult.securities}</span>
+              </div>
+            </div>
 
             <button
               onClick={handleDone}
