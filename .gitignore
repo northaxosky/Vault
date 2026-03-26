@@ -3,6 +3,7 @@ node_modules/
 
 # user data / imports
 *.csv
+!src/test/fixtures/*.csv
 *.png
 
 # next.js

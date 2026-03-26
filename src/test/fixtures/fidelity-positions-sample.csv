@@ -1,0 +1,10 @@
+Account Number,Account Name,Symbol,Description,Quantity,Last Price,Last Price Change,Current Value,Today's Gain/Loss Dollar,Today's Gain/Loss Percent,Total Gain/Loss Dollar,Total Gain/Loss Percent,Percent Of Account,Cost Basis Total,Average Cost Basis,Type
+Z12345678,ESPP Stocks,FCASH**,HELD IN FCASH,,,,$450.25,,,,,0.85%,,,Cash,
+Z12345678,ESPP Stocks,MSFT,MICROSOFT CORP,50.0000,$371.04,-$1.70,$18552.00,-$85.00,-0.46%,-$1448.00,-7.24%,99.15%,$20000.00,$400.00,Cash,
+987654321,BrokerageLink,FDRXX**,HELD IN MONEY MARKET,,,,$3200.50,,,,,5.50%,,,Cash,
+987654321,BrokerageLink,VTI,VANGUARD INDEX FDS VANGUARD TOTAL STK MKT ETF,25.000,$325.15,+$1.97,$8128.75,+$49.25,+0.61%,-$171.25,-2.06%,13.96%,$8300.00,$332.00,Cash,
+987654321,BrokerageLink,QQQ,INVESCO QQQ TR UNIT SER 1,40.000,$587.82,+$3.84,$23512.80,+$153.60,+0.66%,+$2512.80,+11.96%,40.40%,$21000.00,$525.00,Cash,
+987654321,BrokerageLink,FXAIX,FIDELITY 500 INDEX FUND,75.000,$229.58,+$1.24,$17218.50,+$93.00,+0.54%,+$2218.50,+14.79%,29.58%,$15000.00,$200.00,Cash,
+987654321,BrokerageLink,AMZN,AMAZON.COM INC,15.000,$211.71,+$4.47,$3175.65,+$67.05,+2.16%,-$324.35,-9.27%,5.45%,$3500.00,$233.33,Cash,
+111222333,Health Savings Account,FDRXX**,HELD IN MONEY MARKET,,,,$275.50,,,,,100.00%,,,Cash,
+111222333,Health Savings Account,Pending activity,,,,,-$150.00,,,,,,,,,
