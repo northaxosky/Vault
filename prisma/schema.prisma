@@ -79,6 +79,7 @@ model PlaidItem {
   accessToken     String            // encrypted with AES-256-GCM
   institutionName String?
   cursor          String?           // bookmark for transaction sync
+  isManual        Boolean  @default(false) // true for CSV-imported institutions
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -112,7 +113,7 @@ model Account {
 model Transaction {
   id                  String   @id @default(uuid())
   accountId           String
-  plaidTransactionId  String   @unique // Plaid's ID for this transaction
+  plaidTransactionId  String   @unique // Plaid's ID or deterministic hash for CSV imports
   name                String            // description from the bank ("UBER EATS")
   merchantName        String?           // cleaned-up merchant name ("Uber Eats")
   amount              Decimal           // positive = money spent, negative = income
@@ -126,6 +127,7 @@ model Transaction {
   currency            String   @default("USD")
   notes               String?           // user-added notes for this transaction
   userCategory        String?           // user's category override (CATEGORY_CONFIG key)
+  importBatchId       String?           // CSV import batch ID for undo support
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 

@@ -1,6 +1,10 @@
 # dependencies
 node_modules/
 
+# user data / imports
+*.csv
+*.png
+
 # next.js
 .next/
 out/

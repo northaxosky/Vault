@@ -12,7 +12,8 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import PlaidLink from "@/components/PlaidLink";
+import BankActionDropdown from "@/components/BankActionDropdown";
+import CsvImportDialog from "@/components/CsvImportDialog";
 import { getCategoryLabel, getCategoryIcon, getEffectiveCategory, formatCurrency, formatFrequency } from "@/lib/categories";
 import { PieChart, Pie, Cell, Tooltip, AreaChart, Area, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from "recharts";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -131,6 +132,7 @@ export default function DashboardClient({
   const [selectedTxn, setSelectedTxn] = useState<TransactionData | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [widgets, setWidgets] = useState<WidgetId[]>(enabledWidgets);
+  const [csvImportOpen, setCsvImportOpen] = useState(false);
 
   const handleRowClick = useCallback((txn: TransactionData) => {
     setSelectedTxn(txn);
@@ -201,9 +203,10 @@ export default function DashboardClient({
             Link your first bank account to start tracking your finances.
           </p>
           <div className="mt-6 inline-block">
-            <PlaidLink onLinkSuccess={handleLinkSuccess} isDemo={isDemo} />
+            <BankActionDropdown onLinkSuccess={handleLinkSuccess} onImportCsv={() => setCsvImportOpen(true)} isDemo={isDemo} />
           </div>
         </div>
+        <CsvImportDialog open={csvImportOpen} onClose={() => setCsvImportOpen(false)} onSuccess={handleLinkSuccess} />
       </div>
     );
   }
@@ -248,7 +251,7 @@ export default function DashboardClient({
             />
             {syncing ? "Syncing..." : "Sync"}
           </button>
-          <PlaidLink onLinkSuccess={handleLinkSuccess} isDemo={isDemo} />
+          <BankActionDropdown onLinkSuccess={handleLinkSuccess} onImportCsv={() => setCsvImportOpen(true)} isDemo={isDemo} />
         </div>
       </div>
 
@@ -706,6 +709,7 @@ export default function DashboardClient({
           );
         }}
       />
+      <CsvImportDialog open={csvImportOpen} onClose={() => setCsvImportOpen(false)} onSuccess={handleLinkSuccess} />
     </div>
   );
 }

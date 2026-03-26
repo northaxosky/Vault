@@ -12,9 +12,11 @@ import { toast } from "sonner";
 function PlaidLinkButton({
   linkToken,
   onSuccess,
+  className,
 }: {
   linkToken: string;
   onSuccess: (publicToken: string) => Promise<void>;
+  className?: string;
 }) {
   const [loading, setLoading] = useState(false);
 
@@ -51,7 +53,7 @@ function PlaidLinkButton({
     <button
       onClick={() => open()}
       disabled={!ready || loading}
-      className="glow rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-all hover:bg-primary/80 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background disabled:opacity-50"
+      className={className || "glow rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-all hover:bg-primary/80 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background disabled:opacity-50"}
     >
       {loading ? "Linking..." : "Link Bank Account"}
     </button>
@@ -61,9 +63,11 @@ function PlaidLinkButton({
 export default function PlaidLink({
   onLinkSuccess,
   isDemo = false,
+  className,
 }: {
   onLinkSuccess?: () => void;
   isDemo?: boolean;
+  className?: string;
 }) {
   const [linkToken, setLinkToken] = useState<string | null>(null);
 
@@ -128,7 +132,7 @@ export default function PlaidLink({
       <button
         disabled
         title="Bank linking is disabled in demo mode"
-        className="rounded-lg bg-primary/60 px-4 py-2 text-sm font-medium text-primary-foreground cursor-not-allowed opacity-60"
+        className={className || "rounded-lg bg-primary/60 px-4 py-2 text-sm font-medium text-primary-foreground cursor-not-allowed opacity-60"}
       >
         Link Bank Account
       </button>
@@ -136,14 +140,14 @@ export default function PlaidLink({
   }
 
   if (linkToken) {
-    return <PlaidLinkButton linkToken={linkToken} onSuccess={onSuccess} />;
+    return <PlaidLinkButton linkToken={linkToken} onSuccess={onSuccess} className={className} />;
   }
 
   return (
     <button
       disabled={true}
       suppressHydrationWarning
-      className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground opacity-50"
+      className={className || "rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground opacity-50"}
     >
       Link Bank Account
     </button>
