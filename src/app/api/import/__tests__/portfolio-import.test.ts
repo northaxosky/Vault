@@ -146,7 +146,7 @@ function setupPrismaHappyPath() {
   mockPlaidItemFindFirst.mockResolvedValue(null as never);
 
   // PlaidItem.create → returns a new item with one account
-  mockPlaidItemCreate.mockImplementation(async (args: any) => ({
+  mockPlaidItemCreate.mockImplementation(async (args: Record<string, unknown>) => ({
     id: `plaid-item-${args.data.institutionName}`,
     ...args.data,
     accounts: [
@@ -166,7 +166,7 @@ function setupPrismaHappyPath() {
   mockSecurityFindFirst.mockResolvedValue(null as never);
 
   // Security.create → returns a new security with an incremented id
-  mockSecurityCreate.mockImplementation(async (args: any) => ({
+  mockSecurityCreate.mockImplementation(async (args: Record<string, unknown>) => ({
     id: `sec-${++securityIdCounter}`,
     ...args.data,
   }) as never);
@@ -314,33 +314,33 @@ describe("POST /api/import/portfolio", () => {
 
     // Collect all created tickers
     const createdSecurities = mockSecurityCreate.mock.calls.map(
-      (call: any) => call[0].data,
+      (call: unknown[]) => call[0].data,
     );
 
     // MSFT — stock
-    const msft = createdSecurities.find((s: any) => s.ticker === "MSFT");
+    const msft = createdSecurities.find((s: Record<string, unknown>) => s.ticker === "MSFT");
     expect(msft).toBeDefined();
     expect(msft.name).toBe("MICROSOFT CORP");
     expect(msft.type).toBe("stock");
 
     // VTI — etf (known ETF)
-    const vti = createdSecurities.find((s: any) => s.ticker === "VTI");
+    const vti = createdSecurities.find((s: Record<string, unknown>) => s.ticker === "VTI");
     expect(vti).toBeDefined();
     expect(vti.name).toContain("VANGUARD");
     expect(vti.type).toBe("etf");
 
     // QQQ — etf (known ETF)
-    const qqq = createdSecurities.find((s: any) => s.ticker === "QQQ");
+    const qqq = createdSecurities.find((s: Record<string, unknown>) => s.ticker === "QQQ");
     expect(qqq).toBeDefined();
     expect(qqq.type).toBe("etf");
 
     // FXAIX — mutual fund (5-char ending in X + "FUND" in description)
-    const fxaix = createdSecurities.find((s: any) => s.ticker === "FXAIX");
+    const fxaix = createdSecurities.find((s: Record<string, unknown>) => s.ticker === "FXAIX");
     expect(fxaix).toBeDefined();
     expect(fxaix.type).toBe("mutual fund");
 
     // AMZN — stock
-    const amzn = createdSecurities.find((s: any) => s.ticker === "AMZN");
+    const amzn = createdSecurities.find((s: Record<string, unknown>) => s.ticker === "AMZN");
     expect(amzn).toBeDefined();
     expect(amzn.name).toBe("AMAZON.COM INC");
     expect(amzn.type).toBe("stock");
@@ -359,7 +359,7 @@ describe("POST /api/import/portfolio", () => {
       type: "stock",
     };
 
-    mockSecurityFindFirst.mockImplementation(async (args: any) => {
+    mockSecurityFindFirst.mockImplementation(async (args: Record<string, unknown>) => {
       if (args.where.ticker === "MSFT") return existingMsft as never;
       return null as never;
     });
@@ -391,12 +391,12 @@ describe("POST /api/import/portfolio", () => {
     // Find the MSFT upsert call — it's the first security created (sec-1)
     // and accountId is "acct-ESPP Stocks"
     const msftCall = mockHoldingUpsert.mock.calls.find(
-      (call: any) =>
+      (call: unknown[]) =>
         call[0].where.accountId_securityId.accountId === "acct-ESPP Stocks",
     );
     expect(msftCall).toBeDefined();
 
-    const msftArgs = (msftCall as any)[0];
+    const msftArgs = (msftCall as unknown[])[0];
     expect(msftArgs.update.quantity).toBe(50);
     expect(msftArgs.update.costBasis).toBe(20000);
     expect(msftArgs.update.currentValue).toBe(18552);
@@ -408,7 +408,7 @@ describe("POST /api/import/portfolio", () => {
 
     // Find a BrokerageLink holding — e.g. QQQ (40 shares, $21000 cost, $23512.80 value)
     const brokeCalls = mockHoldingUpsert.mock.calls.filter(
-      (call: any) =>
+      (call: unknown[]) =>
         call[0].where.accountId_securityId.accountId === "acct-BrokerageLink",
     );
     // BrokerageLink has 4 positions: VTI, QQQ, FXAIX, AMZN
@@ -416,10 +416,10 @@ describe("POST /api/import/portfolio", () => {
 
     // Look for the QQQ call by matching quantity = 40
     const qqqCall = brokeCalls.find(
-      (call: any) => call[0].update.quantity === 40,
+      (call: unknown[]) => call[0].update.quantity === 40,
     );
     expect(qqqCall).toBeDefined();
-    const qqqArgs = (qqqCall as any)[0];
+    const qqqArgs = (qqqCall as unknown[])[0];
     expect(qqqArgs.update.costBasis).toBe(21000);
     expect(qqqArgs.update.currentValue).toBe(23512.80);
   });

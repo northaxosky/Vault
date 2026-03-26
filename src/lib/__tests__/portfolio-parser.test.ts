@@ -4,9 +4,6 @@ import { join } from "path";
 import {
   detectPortfolioFormat,
   parsePortfolioCsv,
-  type ParsedPosition,
-  type ParsedCashPosition,
-  type PortfolioParseResult,
 } from "@/lib/portfolio-parser";
 
 // ---------------------------------------------------------------------------

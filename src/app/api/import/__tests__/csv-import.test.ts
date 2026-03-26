@@ -53,7 +53,7 @@ const mockIsDemoMode = vi.mocked(isDemoMode);
 
 const mockAccountFindUnique = vi.mocked(prisma.account.findUnique);
 const mockAccountFindMany = vi.mocked(prisma.account.findMany);
-const mockAccountUpdate = vi.mocked(prisma.account.update);
+// const mockAccountUpdate = vi.mocked(prisma.account.update);
 const mockTransactionFindMany = vi.mocked(prisma.transaction.findMany);
 const mockTransactionFindFirst = vi.mocked(prisma.transaction.findFirst);
 const mockTransactionCreateMany = vi.mocked(prisma.transaction.createMany);
@@ -253,7 +253,7 @@ describe("POST /api/accounts/manual", () => {
       type: "depository",
     };
 
-    mockPrismaTransaction.mockImplementation(async (cb: any) => {
+    mockPrismaTransaction.mockImplementation(async (cb: (tx: unknown) => unknown) => {
       const tx = {
         plaidItem: { create: vi.fn().mockResolvedValue(mockPlaidItem) },
         account: { create: vi.fn().mockResolvedValue(mockAccount) },
@@ -282,7 +282,7 @@ describe("POST /api/accounts/manual", () => {
 
     let capturedPlaidItemData: Record<string, unknown> | null = null;
 
-    mockPrismaTransaction.mockImplementation(async (cb: any) => {
+    mockPrismaTransaction.mockImplementation(async (cb: (tx: unknown) => unknown) => {
       const tx = {
         plaidItem: {
           create: vi.fn().mockImplementation((args: { data: Record<string, unknown> }) => {
@@ -317,7 +317,7 @@ describe("POST /api/accounts/manual", () => {
 
     let capturedAccountData: Record<string, unknown> | null = null;
 
-    mockPrismaTransaction.mockImplementation(async (cb: any) => {
+    mockPrismaTransaction.mockImplementation(async (cb: (tx: unknown) => unknown) => {
       const tx = {
         plaidItem: {
           create: vi.fn().mockResolvedValue({
