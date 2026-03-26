@@ -21,7 +21,7 @@ export interface CsvParseResult {
   skippedRows: number;
 }
 
-export type CsvFormatId = "first-tech" | "amex" | "chase" | "robinhood" | "generic";
+export type CsvFormatId = "first-tech" | "amex" | "chase" | "generic";
 
 interface CsvFormat {
   id: CsvFormatId;
@@ -201,71 +201,6 @@ const CHASE_FORMAT: CsvFormat = {
   },
 };
 
-// Robinhood Trans Code → category mapping
-const ROBINHOOD_TRANS_CATEGORY: Record<string, string> = {
-  buy: "TRANSFER_OUT",
-  sell: "TRANSFER_IN",
-  cdiv: "INCOME",
-  ach: "TRANSFER_IN",
-  itrf: "TRANSFER_OUT",
-  mtch: "INCOME",
-  pfir: "INCOME",
-  abip: "INCOME",
-  noa: "GOVERNMENT_AND_NON_PROFIT",
-};
-
-/** Strip CUSIP / dividend reinvestment lines from Robinhood Description */
-function cleanRobinhoodDescription(description: string): string {
-  return description
-    .split("\n")
-    .filter((l) => !l.trim().startsWith("CUSIP:") && l.trim() !== "Dividend Reinvestment")
-    .join(" ")
-    .trim();
-}
-
-const ROBINHOOD_FORMAT: CsvFormat = {
-  id: "robinhood",
-  label: "Robinhood",
-  headerFingerprint: ["activity date", "process date", "settle date", "instrument", "trans code"],
-  parse(row) {
-    const date = parseDate(row["Activity Date"]);
-    if (!date) return null;
-
-    const transCode = (row["Trans Code"] || "").trim();
-    const instrument = (row["Instrument"] || "").trim();
-    const description = (row["Description"] || "").trim();
-    const amountStr = (row["Amount"] || "").trim();
-
-    // Skip disclaimer rows (extra columns or no meaningful data)
-    if (!transCode && !instrument && !amountStr) return null;
-
-    // Skip stock-only transfers with no dollar amount (ACATI for shares, REC)
-    const amount = parseAmount(amountStr);
-    if (amount === null) return null;
-
-    // Build descriptive name
-    const cleanDesc = cleanRobinhoodDescription(description);
-    const name = instrument
-      ? `${instrument} — ${cleanDesc}`
-      : cleanDesc || transCode;
-
-    // Category from trans code
-    const category = ROBINHOOD_TRANS_CATEGORY[transCode.toLowerCase()] ?? null;
-
-    // Robinhood: negative amounts (parenthetical) = money out, positive = money in
-    // App convention: positive = spending, negative = income → flip sign
-    return {
-      date,
-      name,
-      merchantName: null,
-      amount: -amount,
-      category,
-      balance: null,
-      rawRow: row,
-    };
-  },
-};
-
 const GENERIC_FORMAT: CsvFormat = {
   id: "generic",
   label: "Generic CSV",
@@ -301,7 +236,7 @@ const GENERIC_FORMAT: CsvFormat = {
 };
 
 // Order matters — specific formats first, generic last
-const FORMATS: CsvFormat[] = [FIRST_TECH_FORMAT, CHASE_FORMAT, AMEX_FORMAT, ROBINHOOD_FORMAT, GENERIC_FORMAT];
+const FORMATS: CsvFormat[] = [FIRST_TECH_FORMAT, CHASE_FORMAT, AMEX_FORMAT, GENERIC_FORMAT];
 
 // ---------------------------------------------------------------------------
 // CSV text parser

@@ -15,7 +15,6 @@ const VALID_FORMATS: Set<string> = new Set([
   "first-tech",
   "amex",
   "chase",
-  "robinhood",
   "generic",
 ]);
 

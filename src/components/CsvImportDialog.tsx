@@ -467,7 +467,7 @@ export default function CsvImportDialog({ open, onClose, onSuccess }: CsvImportD
                       Drop CSV file here or click to browse
                     </p>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      Supports First Tech, Amex, Chase, Robinhood, Fidelity &amp; more
+                      Supports First Tech, Amex, Chase, Fidelity &amp; more
                     </p>
                   </div>
                 </>
