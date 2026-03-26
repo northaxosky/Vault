@@ -32,7 +32,7 @@ export default function BankActionDropdown({
   }, []);
 
   return (
-    <div ref={ref} className="relative flex items-center">
+    <div ref={ref} className="relative flex items-stretch">
       {/* Main button: Plaid Link (rounded-r-none to merge with caret) */}
       <PlaidLink
         onLinkSuccess={onLinkSuccess}
@@ -43,13 +43,12 @@ export default function BankActionDropdown({
       {/* Caret dropdown trigger */}
       <button
         onClick={() => setOpen((prev) => !prev)}
-        className="ml-px flex items-center rounded-r-lg border border-l-0 border-primary/30 bg-primary px-1.5 py-2 text-primary-foreground transition-colors hover:bg-primary/80 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background"
+        className="ml-px flex items-center rounded-r-lg border border-l-0 border-primary/30 bg-primary px-2 text-sm text-primary-foreground transition-colors hover:bg-primary/80 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background"
         aria-label="More bank actions"
         aria-expanded={open}
       >
         <ChevronDown className="h-4 w-4" />
       </button>
-
       {/* Dropdown menu */}
       {open && (
         <div className="absolute right-0 top-full z-50 mt-1 w-52 rounded-lg border border-border bg-popover p-1 shadow-lg">
