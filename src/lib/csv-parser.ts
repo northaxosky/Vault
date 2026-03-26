@@ -241,10 +241,7 @@ const ROBINHOOD_FORMAT: CsvFormat = {
 
     // Skip stock-only transfers with no dollar amount (ACATI for shares, REC)
     const amount = parseAmount(amountStr);
-    if (amount === null || amount === 0) {
-      // Allow rows that are pure position transfers (no $ value) to be skipped
-      if (!amountStr || amountStr === "") return null;
-    }
+    if (amount === null) return null;
 
     // Build descriptive name
     const cleanDesc = cleanRobinhoodDescription(description);

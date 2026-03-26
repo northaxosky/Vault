@@ -184,15 +184,30 @@ export async function POST(request: Request) {
         skipDuplicates: true,
       });
 
-      // --- Update account balance if CSV contains balance data ---
+      // --- Update account balance ---
       const withBalance = unique
         .filter((txn) => txn.balance !== null)
         .sort((a, b) => b.date.getTime() - a.date.getTime());
 
       if (withBalance.length > 0) {
+        // CSV has explicit balance data (e.g., First Tech) — use most recent
         await prisma.account.update({
           where: { id: accountId },
           data: { currentBalance: withBalance[0].balance! },
+        });
+      } else {
+        // No balance column — compute from transaction sum
+        // Negative amounts = income/inflows, positive = spending/outflows
+        // Net balance contribution = -sum (inflows add, outflows subtract)
+        const netAmount = unique.reduce((sum, txn) => sum - txn.amount, 0);
+        const currentAccount = await prisma.account.findUnique({
+          where: { id: accountId },
+          select: { currentBalance: true },
+        });
+        const newBalance = (currentAccount?.currentBalance ?? 0) + netAmount;
+        await prisma.account.update({
+          where: { id: accountId },
+          data: { currentBalance: Math.round(newBalance * 100) / 100 },
         });
       }
     }
