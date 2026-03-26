@@ -147,6 +147,8 @@ export async function POST(request: Request) {
 
     // --- Build batch and insert ---
     const batchId = `import_${crypto.randomUUID()}`;
+    let importedCount = 0;
+    let inBatchDuplicates = 0;
 
     if (unique.length > 0) {
       const records = unique.map((txn) => ({
@@ -166,7 +168,21 @@ export async function POST(request: Request) {
         importBatchId: batchId,
       }));
 
-      await prisma.transaction.createMany({ data: records });
+      // Deduplicate within the batch (identical date+amount+name → same hash)
+      const seen = new Set<string>();
+      const dedupedRecords = records.filter((r) => {
+        if (seen.has(r.plaidTransactionId)) return false;
+        seen.add(r.plaidTransactionId);
+        return true;
+      });
+
+      inBatchDuplicates = records.length - dedupedRecords.length;
+      importedCount = dedupedRecords.length;
+
+      await prisma.transaction.createMany({
+        data: dedupedRecords,
+        skipDuplicates: true,
+      });
 
       // --- Update account balance if CSV contains balance data ---
       const withBalance = unique
@@ -184,8 +200,8 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       batchId,
-      imported: unique.length,
-      duplicates: duplicateCount,
+      imported: importedCount,
+      duplicates: duplicateCount + inBatchDuplicates,
       skipped: skippedRows,
       errors,
       format,
