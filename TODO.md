@@ -59,11 +59,19 @@
 - [x] Plaid investment holdings sync (snapshot-based, upsert securities + holdings, stale cleanup)
 - [x] Recurring transaction detection (Plaid streams, badges, "Recurring only" filter)
 - [x] Budget / spending categories (CRUD API, budgets page, sidebar nav)
+- [x] **Fidelity portfolio CSV parser** — parse positions export into typed holdings (multi-account, cash positions, security type inference)
+- [x] **Portfolio import API** (`/api/import/portfolio`) — upload Fidelity CSV, auto-create manual institutions/accounts, upsert securities + holdings
 
 ## Features — Notifications
 
 - [x] **Smart alerts** — large transaction warnings, budget overspend, low balance (in-app bell + toast via sonner)
 - [ ] Wire up existing email notification settings to actually send
+
+## Testing
+
+- [x] **CSV fixture tests** (`csv-fixture-tests`) — fixture-based parser tests for First Tech, Amex, and Fidelity formats with format detection, sign-flipping, category mapping, and graceful wrong-file-type handling (25 tests)
+- [x] **Portfolio parser tests** (`portfolio-parser-tests`) — unit tests for Fidelity portfolio CSV parser: format detection, equity/cash/skipped row parsing, account grouping, amount parsing, security type inference, empty/invalid input, inline CSV edge cases (55 tests)
+- [x] **Portfolio API tests** (`portfolio-api-tests`) — integration tests for portfolio import API: GET support check, POST auth/demo/validation guards, valid Fidelity CSV summary (accounts, positions, cash, totalValue), Security upsert with ticker/name/type, InvestmentHolding upsert with quantity/costBasis/currentValue (11 tests)
 
 ## Improvements
 

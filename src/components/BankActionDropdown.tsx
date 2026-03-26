@@ -1,18 +1,20 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { ChevronDown, Upload } from "lucide-react";
+import { ChevronDown, Upload, BarChart3 } from "lucide-react";
 import PlaidLink from "@/components/PlaidLink";
 
 interface BankActionDropdownProps {
   onLinkSuccess?: () => void;
   onImportCsv: () => void;
+  onImportPortfolio: () => void;
   isDemo?: boolean;
 }
 
 export default function BankActionDropdown({
   onLinkSuccess,
   onImportCsv,
+  onImportPortfolio,
   isDemo = false,
 }: BankActionDropdownProps) {
   const [open, setOpen] = useState(false);
@@ -60,6 +62,16 @@ export default function BankActionDropdown({
           >
             <Upload className="h-4 w-4" />
             Import CSV
+          </button>
+          <button
+            onClick={() => {
+              setOpen(false);
+              onImportPortfolio();
+            }}
+            className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-foreground transition-colors hover:bg-accent"
+          >
+            <BarChart3 className="h-4 w-4" />
+            Import Portfolio
           </button>
         </div>
       )}

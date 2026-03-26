@@ -235,7 +235,7 @@ const FORMATS: CsvFormat[] = [FIRST_TECH_FORMAT, CHASE_FORMAT, AMEX_FORMAT, GENE
 // CSV text parser
 // ---------------------------------------------------------------------------
 
-function parseCsvText(text: string): { headers: string[]; rows: Record<string, string>[] } {
+export function parseCsvText(text: string): { headers: string[]; rows: Record<string, string>[] } {
   // Strip BOM
   const cleaned = text.replace(/^\uFEFF/, "");
   const lines = cleaned.split(/\r?\n/).filter((l) => l.trim().length > 0);
@@ -257,7 +257,7 @@ function parseCsvText(text: string): { headers: string[]; rows: Record<string, s
 }
 
 /** Parse a single CSV line, handling quoted fields with commas and escaped quotes */
-function parseCsvLine(line: string): string[] {
+export function parseCsvLine(line: string): string[] {
   const fields: string[] = [];
   let current = "";
   let inQuotes = false;
