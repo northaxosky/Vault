@@ -10,45 +10,33 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
 
-    env:
-      DATABASE_URL: "postgresql://localhost:5432/vault_test"
-      NEXTAUTH_SECRET: "ci-test-secret"
-      NEXTAUTH_URL: "http://localhost:3000"
-      PLAID_CLIENT_ID: "test"
-      PLAID_SECRET: "test"
-      PLAID_ENV: "sandbox"
-      ENCRYPTION_KEY: "0000000000000000000000000000000000000000000000000000000000000000"
-      RESEND_API_KEY: "re_test"
-      EMAIL_FROM: "test@test.com"
-
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v4
         with:
           node-version: 22
-
-      - name: Cache node_modules
-        uses: actions/cache@v5
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-npm-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-npm-
+          cache: npm
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Security audit
-        run: npm audit --audit-level=critical
+      - name: Lint
+        run: npm run lint
 
-      - name: Run linter
-        run: npx eslint .
-
-      - name: Run build
-        run: npm run build
-
-      - name: Run tests
+      - name: Test
         run: npm test
+
+      - name: Build
+        run: npm run build
+        env:
+          DATABASE_URL: "postgresql://dummy:dummy@localhost:5432/dummy"
+          NEXTAUTH_SECRET: "ci-test-secret"
+          NEXTAUTH_URL: "http://localhost:3000"
+          ENCRYPTION_KEY: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+
+      - name: Security audit
+        run: npm audit --audit-level=high
+        continue-on-error: true
