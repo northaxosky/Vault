@@ -71,7 +71,7 @@ function SidebarContent({
       </Link>
 
       {/* Main nav */}
-      <nav className="flex-1 space-y-1 px-3">
+      <nav className="flex-1 space-y-1 px-3" aria-label="Main navigation">
         {navItems.map((item) => {
           const isActive =
             item.href === "/dashboard"
@@ -83,6 +83,7 @@ function SidebarContent({
               key={item.href}
               href={item.href}
               onClick={onNavigate}
+              aria-current={isActive ? "page" : undefined}
               className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors ${
                 isActive
                   ? "bg-accent text-accent-foreground border-l-2 border-primary"
@@ -187,7 +188,10 @@ export default function DashboardSidebar({
       {/* Mobile: hamburger button in a sticky top bar */}
       <div className="glass-subtle sticky top-0 z-40 flex items-center gap-3 border-b border-border px-4 py-3 lg:hidden">
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-          <SheetTrigger className="text-muted-foreground hover:text-foreground">
+          <SheetTrigger
+            className="text-muted-foreground hover:text-foreground"
+            aria-label="Open navigation menu"
+          >
             {mobileOpen ? (
               <X className="h-5 w-5" />
             ) : (

@@ -111,6 +111,11 @@ export default function StockWatchlistCard() {
             <div
               key={item.ticker}
               className="flex items-center gap-3 text-sm"
+              aria-label={
+                item.quote
+                  ? `${item.ticker}: ${formatPrice(item.quote.price)}, ${item.quote.changePercent >= 0 ? "+" : ""}${item.quote.changePercent.toFixed(2)}% change`
+                  : `${item.ticker}: No quote available`
+              }
             >
               <div className="min-w-0 flex-1">
                 <span className="font-semibold text-foreground">

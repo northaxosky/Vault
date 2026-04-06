@@ -95,10 +95,14 @@ export default function AlertBell() {
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger
         className="relative flex items-center justify-center rounded-lg p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+        aria-label={`Notifications${unreadCount > 0 ? `, ${unreadCount} unread` : ""}`}
       >
         <Bell className="size-5" />
         {unreadCount > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-white">
+          <span
+            className="absolute -top-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-white"
+            aria-hidden="true"
+          >
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}

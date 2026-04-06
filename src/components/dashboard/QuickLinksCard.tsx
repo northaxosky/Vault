@@ -183,6 +183,7 @@ export default function QuickLinksCard() {
           <button
             onClick={() => setForm({ ...EMPTY_FORM })}
             className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-xl text-primary hover:bg-primary/20 transition-colors"
+            aria-label="Add new quick link"
           >
             +
           </button>
@@ -222,6 +223,7 @@ export default function QuickLinksCard() {
                   }}
                   className="rounded p-0.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
                   title="Edit"
+                  aria-label={`Edit ${link.label}`}
                 >
                   ✏️
                 </button>
@@ -243,6 +245,7 @@ export default function QuickLinksCard() {
                     }}
                     className="rounded p-0.5 text-xs text-muted-foreground hover:text-red-400 transition-colors"
                     title="Delete"
+                    aria-label={`Delete ${link.label}`}
                   >
                     ✕
                   </button>
@@ -259,6 +262,7 @@ export default function QuickLinksCard() {
                 setConfirmDelete(null);
               }}
               className="flex flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-border/50 p-3 transition-colors hover:bg-white/5"
+              aria-label="Add new quick link"
             >
               <span className="text-2xl text-muted-foreground">+</span>
               <span className="text-xs text-muted-foreground">Add</span>
