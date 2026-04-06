@@ -40,7 +40,7 @@ describe("POST /api/auth/verify/send", () => {
 
     expect(response.status).toBe(401);
     const body = await response.json();
-    expect(body.error).toBe("Authentication required");
+    expect(body.error).toBe("Unauthorized");
   });
 
   it("returns 401 when session has no email", async () => {
@@ -50,7 +50,7 @@ describe("POST /api/auth/verify/send", () => {
 
     expect(response.status).toBe(401);
     const body = await response.json();
-    expect(body.error).toBe("Authentication required");
+    expect(body.error).toBe("Unauthorized");
   });
 
   it("returns 400 when email is already verified", async () => {
