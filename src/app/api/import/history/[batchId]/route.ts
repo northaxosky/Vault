@@ -1,22 +1,19 @@
-import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { isDemoMode } from "@/lib/demo";
+import { unauthorizedResponse, notFoundResponse, errorResponse, successResponse } from "@/lib/api-response";
 
 export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ batchId: string }> },
 ) {
   if (isDemoMode()) {
-    return NextResponse.json(
-      { error: "Cannot delete imports in demo mode" },
-      { status: 403 },
-    );
+    return errorResponse("Cannot delete imports in demo mode", 403);
   }
 
   const session = await auth();
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   try {
@@ -32,10 +29,7 @@ export async function DELETE(
     });
 
     if (!owned) {
-      return NextResponse.json(
-        { error: "Import batch not found" },
-        { status: 404 },
-      );
+      return notFoundResponse("Import batch");
     }
 
     // Delete all transactions in this batch that belong to the user
@@ -46,15 +40,9 @@ export async function DELETE(
       },
     });
 
-    return NextResponse.json({
-      success: true,
-      deleted: result.count,
-    });
+    return successResponse({ success: true, deleted: result.count });
   } catch (error) {
     console.error("Error deleting import batch:", error);
-    return NextResponse.json(
-      { error: "Failed to delete import batch" },
-      { status: 500 },
-    );
+    return errorResponse("Failed to delete import batch", 500);
   }
 }

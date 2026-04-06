@@ -4,6 +4,7 @@ import { isDemoMode } from "@/lib/demo";
 import { rateLimit } from "@/lib/rate-limit";
 import { stockProvider } from "@/lib/stock-provider";
 import type { StockQuote } from "@/lib/stock-provider";
+import { unauthorizedResponse, validationError, errorResponse } from "@/lib/api-response";
 
 const MAX_TICKERS = 20;
 
@@ -46,7 +47,7 @@ export async function GET(request: Request) {
 
   const session = await auth();
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   try {
@@ -54,10 +55,7 @@ export async function GET(request: Request) {
     const raw = (url.searchParams.get("tickers") ?? "").trim();
 
     if (!raw) {
-      return NextResponse.json(
-        { error: "Query parameter 'tickers' is required" },
-        { status: 400 }
-      );
+      return validationError("Query parameter 'tickers' is required");
     }
 
     const tickers = raw
@@ -66,10 +64,7 @@ export async function GET(request: Request) {
       .filter(Boolean);
 
     if (tickers.length > MAX_TICKERS) {
-      return NextResponse.json(
-        { error: `Maximum ${MAX_TICKERS} tickers per request` },
-        { status: 400 }
-      );
+      return validationError(`Maximum ${MAX_TICKERS} tickers per request`);
     }
 
     const { success } = rateLimit(`stock-quote:${session.user.id}`, {
@@ -77,19 +72,13 @@ export async function GET(request: Request) {
       windowMs: 60_000,
     });
     if (!success) {
-      return NextResponse.json(
-        { error: "Too many requests" },
-        { status: 429 }
-      );
+      return errorResponse("Too many requests", 429);
     }
 
     const quotes = await stockProvider.getQuotes(tickers);
     return NextResponse.json({ quotes });
   } catch (error) {
     console.error("Error fetching quotes:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch quotes" },
-      { status: 500 }
-    );
+    return errorResponse("Failed to fetch quotes", 500);
   }
 }

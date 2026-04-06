@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { isDemoMode } from "@/lib/demo";
+import { unauthorizedResponse, notFoundResponse, validationError, errorResponse, successResponse } from "@/lib/api-response";
 
 // --- GET: Fetch recent alerts + unread count ---
 
@@ -12,7 +13,7 @@ export async function GET() {
 
   const session = await auth();
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   const [alerts, unreadCount] = await Promise.all([
@@ -44,12 +45,12 @@ export async function GET() {
 
 export async function PATCH(request: Request) {
   if (isDemoMode()) {
-    return NextResponse.json({ success: true });
+    return successResponse({ success: true });
   }
 
   const session = await auth();
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   try {
@@ -61,17 +62,17 @@ export async function PATCH(request: Request) {
         where: { userId: session.user.id, read: false },
         data: { read: true },
       });
-      return NextResponse.json({ success: true });
+      return successResponse({ success: true });
     }
 
     if (!id) {
-      return NextResponse.json({ error: "Alert ID or markAllRead is required" }, { status: 400 });
+      return validationError("Alert ID or markAllRead is required");
     }
 
     // Verify ownership
     const alert = await prisma.alert.findUnique({ where: { id } });
     if (!alert || alert.userId !== session.user.id) {
-      return NextResponse.json({ error: "Alert not found" }, { status: 404 });
+      return notFoundResponse("Alert");
     }
 
     await prisma.alert.update({
@@ -79,9 +80,9 @@ export async function PATCH(request: Request) {
       data: { read: true },
     });
 
-    return NextResponse.json({ success: true });
+    return successResponse({ success: true });
   } catch (err) {
     console.error("Error updating alert:", err);
-    return NextResponse.json({ error: "Failed to update alert" }, { status: 500 });
+    return errorResponse("Failed to update alert", 500);
   }
 }

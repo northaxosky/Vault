@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { calculateCreditScore } from "@/lib/credit-score";
 import { isDemoMode } from "@/lib/demo";
 import { DEMO_CREDIT_SCORE } from "@/lib/demo-data";
+import { unauthorizedResponse } from "@/lib/api-response";
 
 export async function GET() {
   if (isDemoMode()) {
@@ -12,7 +13,7 @@ export async function GET() {
 
   const session = await auth();
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   const accounts = await prisma.account.findMany({

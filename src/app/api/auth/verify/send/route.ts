@@ -3,15 +3,13 @@ import crypto from "crypto";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { sendVerificationEmail } from "@/lib/email";
+import { unauthorizedResponse, validationError } from "@/lib/api-response";
 
 export async function POST() {
   const session = await auth();
 
   if (!session?.user?.email) {
-    return NextResponse.json(
-      { error: "Authentication required" },
-      { status: 401 }
-    );
+    return unauthorizedResponse();
   }
 
   const { email } = session.user;
@@ -22,10 +20,7 @@ export async function POST() {
   });
 
   if (user?.emailVerified) {
-    return NextResponse.json(
-      { error: "Email already verified" },
-      { status: 400 }
-    );
+    return validationError("Email already verified");
   }
 
   const token = crypto.randomUUID();

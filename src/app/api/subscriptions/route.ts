@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { isDemoMode } from "@/lib/demo";
+import { unauthorizedResponse, notFoundResponse, validationError, errorResponse, successResponse } from "@/lib/api-response";
 
 // --- GET: Fetch all recurring streams for the current user ---
 export async function GET() {
@@ -12,7 +13,7 @@ export async function GET() {
   const session = await auth();
 
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   try {
@@ -56,23 +57,20 @@ export async function GET() {
     });
   } catch (error) {
     console.error("Error fetching subscriptions:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch subscriptions" },
-      { status: 500 }
-    );
+    return errorResponse("Failed to fetch subscriptions", 500);
   }
 }
 
 // --- PATCH: Update subscription (toggle cancelled, edit details, etc.) ---
 export async function PATCH(request: Request) {
   if (isDemoMode()) {
-    return NextResponse.json({ success: true });
+    return successResponse({ success: true });
   }
 
   const session = await auth();
 
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   try {
@@ -80,10 +78,7 @@ export async function PATCH(request: Request) {
     const { id, cancelledByUser, merchantName, lastAmount, frequency } = body;
 
     if (!id) {
-      return NextResponse.json(
-        { error: "ID is required" },
-        { status: 400 }
-      );
+      return validationError("ID is required");
     }
 
     // Verify ownership: stream -> account -> plaidItem -> userId
@@ -97,10 +92,7 @@ export async function PATCH(request: Request) {
     });
 
     if (!stream || stream.account.plaidItem.userId !== session.user.id) {
-      return NextResponse.json(
-        { error: "Subscription not found" },
-        { status: 404 }
-      );
+      return notFoundResponse("Subscription");
     }
 
     // Build update data from provided fields
@@ -129,19 +121,13 @@ export async function PATCH(request: Request) {
         "ANNUALLY",
       ];
       if (!validFrequencies.includes(frequency)) {
-        return NextResponse.json(
-          { error: "Invalid frequency" },
-          { status: 400 }
-        );
+        return validationError("Invalid frequency");
       }
       updateData.frequency = frequency;
     }
 
     if (Object.keys(updateData).length === 0) {
-      return NextResponse.json(
-        { error: "No fields to update" },
-        { status: 400 }
-      );
+      return validationError("No fields to update");
     }
 
     const updated = await prisma.recurringStream.update({
@@ -161,23 +147,20 @@ export async function PATCH(request: Request) {
     });
   } catch (error) {
     console.error("Error updating subscription:", error);
-    return NextResponse.json(
-      { error: "Failed to update subscription" },
-      { status: 500 }
-    );
+    return errorResponse("Failed to update subscription", 500);
   }
 }
 
 // --- DELETE: Delete a subscription ---
 export async function DELETE(request: Request) {
   if (isDemoMode()) {
-    return NextResponse.json({ success: true });
+    return successResponse({ success: true });
   }
 
   const session = await auth();
 
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   try {
@@ -185,10 +168,7 @@ export async function DELETE(request: Request) {
     const { id } = body;
 
     if (!id) {
-      return NextResponse.json(
-        { error: "ID is required" },
-        { status: 400 }
-      );
+      return validationError("ID is required");
     }
 
     // Verify ownership: stream -> account -> plaidItem -> userId
@@ -202,10 +182,7 @@ export async function DELETE(request: Request) {
     });
 
     if (!stream || stream.account.plaidItem.userId !== session.user.id) {
-      return NextResponse.json(
-        { error: "Subscription not found" },
-        { status: 404 }
-      );
+      return notFoundResponse("Subscription");
     }
 
     await prisma.recurringStream.delete({
@@ -218,9 +195,6 @@ export async function DELETE(request: Request) {
     });
   } catch (error) {
     console.error("Error deleting subscription:", error);
-    return NextResponse.json(
-      { error: "Failed to delete subscription" },
-      { status: 500 }
-    );
+    return errorResponse("Failed to delete subscription", 500);
   }
 }

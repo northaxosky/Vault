@@ -3,15 +3,16 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { CATEGORY_CONFIG } from "@/lib/categories";
 import { isDemoMode } from "@/lib/demo";
+import { unauthorizedResponse, notFoundResponse, validationError, errorResponse, successResponse } from "@/lib/api-response";
 
 export async function PATCH(request: Request) {
   if (isDemoMode()) {
-    return NextResponse.json({ success: true });
+    return successResponse({ success: true });
   }
 
   const session = await auth();
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   try {
@@ -19,10 +20,7 @@ export async function PATCH(request: Request) {
     const { id, notes, userCategory } = body;
 
     if (!id) {
-      return NextResponse.json(
-        { error: "Transaction ID is required" },
-        { status: 400 }
-      );
+      return validationError("Transaction ID is required");
     }
 
     // Validate userCategory if provided
@@ -32,10 +30,7 @@ export async function PATCH(request: Request) {
       userCategory !== "" &&
       !CATEGORY_CONFIG[userCategory]
     ) {
-      return NextResponse.json(
-        { error: "Invalid category" },
-        { status: 400 }
-      );
+      return validationError("Invalid category");
     }
 
     // Verify ownership: transaction → account → plaidItem → userId
@@ -52,10 +47,7 @@ export async function PATCH(request: Request) {
       !transaction ||
       transaction.account.plaidItem.userId !== session.user.id
     ) {
-      return NextResponse.json(
-        { error: "Transaction not found" },
-        { status: 404 }
-      );
+      return notFoundResponse("Transaction");
     }
 
     // Build update — only include fields that were sent
@@ -78,9 +70,6 @@ export async function PATCH(request: Request) {
     });
   } catch (error) {
     console.error("Error updating transaction:", error);
-    return NextResponse.json(
-      { error: "Failed to update transaction" },
-      { status: 500 }
-    );
+    return errorResponse("Failed to update transaction", 500);
   }
 }

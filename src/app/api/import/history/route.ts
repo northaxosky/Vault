@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { isDemoMode } from "@/lib/demo";
+import { unauthorizedResponse, errorResponse } from "@/lib/api-response";
 
 interface BatchRow {
   importBatchId: string;
@@ -19,7 +20,7 @@ export async function GET() {
 
   const session = await auth();
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   try {
@@ -88,9 +89,6 @@ export async function GET() {
     return NextResponse.json(result);
   } catch (error) {
     console.error("Error fetching import history:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch import history" },
-      { status: 500 },
-    );
+    return errorResponse("Failed to fetch import history", 500);
   }
 }

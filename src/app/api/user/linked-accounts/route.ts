@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { unauthorizedResponse, errorResponse } from "@/lib/api-response";
 
 // --- GET: List linked bank accounts ---
 export async function GET() {
   const session = await auth();
 
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   try {
@@ -32,9 +33,6 @@ export async function GET() {
     return NextResponse.json({ linkedAccounts: plaidItems });
   } catch (error) {
     console.error("Error fetching linked accounts:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch linked accounts" },
-      { status: 500 }
-    );
+    return errorResponse("Failed to fetch linked accounts", 500);
   }
 }

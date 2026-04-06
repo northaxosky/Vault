@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { isDemoMode } from "@/lib/demo";
+import { unauthorizedResponse, notFoundResponse, validationError, errorResponse, successResponse } from "@/lib/api-response";
 
 const DEMO_LINKS = [
   { id: "demo-1", label: "Chase", url: "https://chase.com", icon: "🏦", sortOrder: 0, createdAt: new Date().toISOString() },
@@ -23,7 +24,7 @@ export async function GET() {
   const session = await auth();
 
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   try {
@@ -35,10 +36,7 @@ export async function GET() {
     return NextResponse.json({ links });
   } catch (error) {
     console.error("Error fetching quick links:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch quick links" },
-      { status: 500 }
-    );
+    return errorResponse("Failed to fetch quick links", 500);
   }
 }
 
@@ -51,7 +49,7 @@ export async function POST(request: Request) {
   const session = await auth();
 
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   try {
@@ -59,38 +57,23 @@ export async function POST(request: Request) {
     const { label, url, icon, sortOrder } = body;
 
     if (!label || typeof label !== "string" || label.trim().length === 0) {
-      return NextResponse.json(
-        { error: "Label is required" },
-        { status: 400 }
-      );
+      return validationError("Label is required");
     }
 
     if (label.length > 50) {
-      return NextResponse.json(
-        { error: "Label must be 50 characters or less" },
-        { status: 400 }
-      );
+      return validationError("Label must be 50 characters or less");
     }
 
     if (!url || typeof url !== "string") {
-      return NextResponse.json(
-        { error: "URL is required" },
-        { status: 400 }
-      );
+      return validationError("URL is required");
     }
 
     if (!isValidUrl(url)) {
-      return NextResponse.json(
-        { error: "URL must start with http:// or https://" },
-        { status: 400 }
-      );
+      return validationError("URL must start with http:// or https://");
     }
 
     if (icon !== undefined && icon !== null && typeof icon === "string" && icon.length > 10) {
-      return NextResponse.json(
-        { error: "Icon must be 10 characters or less" },
-        { status: 400 }
-      );
+      return validationError("Icon must be 10 characters or less");
     }
 
     const count = await prisma.quickLink.count({
@@ -98,10 +81,7 @@ export async function POST(request: Request) {
     });
 
     if (count >= 20) {
-      return NextResponse.json(
-        { error: "Maximum of 20 quick links allowed" },
-        { status: 400 }
-      );
+      return validationError("Maximum of 20 quick links allowed");
     }
 
     const link = await prisma.quickLink.create({
@@ -117,10 +97,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ link }, { status: 201 });
   } catch (error) {
     console.error("Error creating quick link:", error);
-    return NextResponse.json(
-      { error: "Failed to create quick link" },
-      { status: 500 }
-    );
+    return errorResponse("Failed to create quick link", 500);
   }
 }
 
@@ -133,7 +110,7 @@ export async function PATCH(request: Request) {
   const session = await auth();
 
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   try {
@@ -141,49 +118,31 @@ export async function PATCH(request: Request) {
     const { id, label, url, icon, sortOrder } = body;
 
     if (!id) {
-      return NextResponse.json(
-        { error: "Quick link ID is required" },
-        { status: 400 }
-      );
+      return validationError("Quick link ID is required");
     }
 
     const existing = await prisma.quickLink.findUnique({ where: { id } });
     if (!existing || existing.userId !== session.user.id) {
-      return NextResponse.json(
-        { error: "Quick link not found" },
-        { status: 404 }
-      );
+      return notFoundResponse("Quick link");
     }
 
     if (label !== undefined) {
       if (typeof label !== "string" || label.trim().length === 0) {
-        return NextResponse.json(
-          { error: "Label is required" },
-          { status: 400 }
-        );
+        return validationError("Label is required");
       }
       if (label.length > 50) {
-        return NextResponse.json(
-          { error: "Label must be 50 characters or less" },
-          { status: 400 }
-        );
+        return validationError("Label must be 50 characters or less");
       }
     }
 
     if (url !== undefined) {
       if (typeof url !== "string" || !isValidUrl(url)) {
-        return NextResponse.json(
-          { error: "URL must start with http:// or https://" },
-          { status: 400 }
-        );
+        return validationError("URL must start with http:// or https://");
       }
     }
 
     if (icon !== undefined && icon !== null && typeof icon === "string" && icon.length > 10) {
-      return NextResponse.json(
-        { error: "Icon must be 10 characters or less" },
-        { status: 400 }
-      );
+      return validationError("Icon must be 10 characters or less");
     }
 
     const data: Record<string, unknown> = {};
@@ -200,23 +159,20 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ link });
   } catch (error) {
     console.error("Error updating quick link:", error);
-    return NextResponse.json(
-      { error: "Failed to update quick link" },
-      { status: 500 }
-    );
+    return errorResponse("Failed to update quick link", 500);
   }
 }
 
 // --- DELETE: Remove a quick link ---
 export async function DELETE(request: Request) {
   if (isDemoMode()) {
-    return NextResponse.json({ success: true });
+    return successResponse({ success: true });
   }
 
   const session = await auth();
 
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   try {
@@ -224,28 +180,19 @@ export async function DELETE(request: Request) {
     const { id } = body;
 
     if (!id) {
-      return NextResponse.json(
-        { error: "Quick link ID is required" },
-        { status: 400 }
-      );
+      return validationError("Quick link ID is required");
     }
 
     const existing = await prisma.quickLink.findUnique({ where: { id } });
     if (!existing || existing.userId !== session.user.id) {
-      return NextResponse.json(
-        { error: "Quick link not found" },
-        { status: 404 }
-      );
+      return notFoundResponse("Quick link");
     }
 
     await prisma.quickLink.delete({ where: { id } });
 
-    return NextResponse.json({ success: true });
+    return successResponse({ success: true });
   } catch (error) {
     console.error("Error deleting quick link:", error);
-    return NextResponse.json(
-      { error: "Failed to delete quick link" },
-      { status: 500 }
-    );
+    return errorResponse("Failed to delete quick link", 500);
   }
 }

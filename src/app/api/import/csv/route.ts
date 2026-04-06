@@ -10,6 +10,7 @@ import {
   getAvailableFormats,
   type CsvFormatId,
 } from "@/lib/csv-parser";
+import { unauthorizedResponse, validationError, errorResponse } from "@/lib/api-response";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
 const VALID_FORMATS: Set<string> = new Set([
@@ -26,7 +27,7 @@ const VALID_FORMATS: Set<string> = new Set([
 export async function GET() {
   const session = await auth();
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   return NextResponse.json({ formats: getAvailableFormats() });
@@ -40,7 +41,7 @@ export async function POST(request: Request) {
   // --- Auth ---
   const session = await auth();
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   const { success } = rateLimit(`csv-import:${session.user.id}`, {
@@ -55,10 +56,7 @@ export async function POST(request: Request) {
   }
 
   if (isDemoMode()) {
-    return NextResponse.json(
-      { error: "CSV import is disabled in demo mode" },
-      { status: 400 },
-    );
+    return validationError("CSV import is disabled in demo mode");
   }
 
   try {
@@ -70,41 +68,26 @@ export async function POST(request: Request) {
 
     // --- Validate inputs ---
     if (!file || !(file instanceof File)) {
-      return NextResponse.json(
-        { error: "A CSV file is required" },
-        { status: 400 },
-      );
+      return validationError("A CSV file is required");
     }
 
     if (file.size === 0) {
-      return NextResponse.json(
-        { error: "The uploaded file is empty" },
-        { status: 400 },
-      );
+      return validationError("The uploaded file is empty");
     }
 
     if (file.size > MAX_FILE_SIZE) {
-      return NextResponse.json(
-        { error: "File exceeds the 5 MB size limit" },
-        { status: 400 },
-      );
+      return validationError("File exceeds the 5 MB size limit");
     }
 
     if (!accountId || typeof accountId !== "string") {
-      return NextResponse.json(
-        { error: "accountId is required" },
-        { status: 400 },
-      );
+      return validationError("accountId is required");
     }
 
     let formatOverride: CsvFormatId | undefined;
     if (formatRaw) {
       const fmt = String(formatRaw);
       if (!VALID_FORMATS.has(fmt)) {
-        return NextResponse.json(
-          { error: `Invalid format "${fmt}". Valid formats: ${[...VALID_FORMATS].join(", ")}` },
-          { status: 400 },
-        );
+        return validationError(`Invalid format "${fmt}". Valid formats: ${[...VALID_FORMATS].join(", ")}`);
       }
       formatOverride = fmt as CsvFormatId;
     }
@@ -116,10 +99,7 @@ export async function POST(request: Request) {
     });
 
     if (!account || account.plaidItem.userId !== session.user.id) {
-      return NextResponse.json(
-        { error: "Account not found or access denied" },
-        { status: 404 },
-      );
+      return errorResponse("Account not found or access denied", 404);
     }
 
     // --- Read & parse CSV ---
@@ -235,9 +215,6 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error("CSV import error:", error);
-    return NextResponse.json(
-      { error: "Failed to import CSV" },
-      { status: 500 },
-    );
+    return errorResponse("Failed to import CSV", 500);
   }
 }

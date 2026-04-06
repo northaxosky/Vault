@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { unauthorizedResponse, notFoundResponse, validationError, errorResponse, successResponse } from "@/lib/api-response";
 
 // --- GET: Fetch all debt accounts for the current user ---
 export async function GET() {
   const session = await auth();
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   try {
@@ -29,7 +30,7 @@ export async function GET() {
     });
   } catch (error) {
     console.error("Error fetching debts:", error);
-    return NextResponse.json({ error: "Failed to fetch debts" }, { status: 500 });
+    return errorResponse("Failed to fetch debts", 500);
   }
 }
 
@@ -37,7 +38,7 @@ export async function GET() {
 export async function POST(request: Request) {
   const session = await auth();
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   try {
@@ -45,22 +46,22 @@ export async function POST(request: Request) {
     const { name, balance, interestRate, minimumPayment, linkedAccountId } = body;
 
     if (!name || typeof name !== "string") {
-      return NextResponse.json({ error: "Name is required" }, { status: 400 });
+      return validationError("Name is required");
     }
 
     const numBalance = Number(balance);
     if (isNaN(numBalance) || numBalance <= 0) {
-      return NextResponse.json({ error: "Balance must be positive" }, { status: 400 });
+      return validationError("Balance must be positive");
     }
 
     const numRate = Number(interestRate);
     if (isNaN(numRate) || numRate < 0 || numRate > 100) {
-      return NextResponse.json({ error: "Interest rate must be between 0 and 100" }, { status: 400 });
+      return validationError("Interest rate must be between 0 and 100");
     }
 
     const numMinPayment = Number(minimumPayment);
     if (isNaN(numMinPayment) || numMinPayment <= 0) {
-      return NextResponse.json({ error: "Minimum payment must be positive" }, { status: 400 });
+      return validationError("Minimum payment must be positive");
     }
 
     if (linkedAccountId) {
@@ -68,7 +69,7 @@ export async function POST(request: Request) {
         where: { id: linkedAccountId, plaidItem: { userId: session.user.id } },
       });
       if (!account) {
-        return NextResponse.json({ error: "Account not found" }, { status: 404 });
+        return notFoundResponse("Account");
       }
     }
 
@@ -95,7 +96,7 @@ export async function POST(request: Request) {
     }, { status: 201 });
   } catch (error) {
     console.error("Error creating debt:", error);
-    return NextResponse.json({ error: "Failed to create debt" }, { status: 500 });
+    return errorResponse("Failed to create debt", 500);
   }
 }
 
@@ -103,7 +104,7 @@ export async function POST(request: Request) {
 export async function PATCH(request: Request) {
   const session = await auth();
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   try {
@@ -111,12 +112,12 @@ export async function PATCH(request: Request) {
     const { id, name, balance, interestRate, minimumPayment, linkedAccountId } = body;
 
     if (!id) {
-      return NextResponse.json({ error: "Debt ID is required" }, { status: 400 });
+      return validationError("Debt ID is required");
     }
 
     const existing = await prisma.debtAccount.findUnique({ where: { id } });
     if (!existing || existing.userId !== session.user.id) {
-      return NextResponse.json({ error: "Debt not found" }, { status: 404 });
+      return notFoundResponse("Debt");
     }
 
     const data: Record<string, unknown> = {};
@@ -124,21 +125,21 @@ export async function PATCH(request: Request) {
     if (balance !== undefined) {
       const num = Number(balance);
       if (isNaN(num) || num <= 0) {
-        return NextResponse.json({ error: "Balance must be positive" }, { status: 400 });
+        return validationError("Balance must be positive");
       }
       data.balance = num;
     }
     if (interestRate !== undefined) {
       const num = Number(interestRate);
       if (isNaN(num) || num < 0 || num > 100) {
-        return NextResponse.json({ error: "Interest rate must be between 0 and 100" }, { status: 400 });
+        return validationError("Interest rate must be between 0 and 100");
       }
       data.interestRate = num;
     }
     if (minimumPayment !== undefined) {
       const num = Number(minimumPayment);
       if (isNaN(num) || num <= 0) {
-        return NextResponse.json({ error: "Minimum payment must be positive" }, { status: 400 });
+        return validationError("Minimum payment must be positive");
       }
       data.minimumPayment = num;
     }
@@ -158,7 +159,7 @@ export async function PATCH(request: Request) {
     });
   } catch (error) {
     console.error("Error updating debt:", error);
-    return NextResponse.json({ error: "Failed to update debt" }, { status: 500 });
+    return errorResponse("Failed to update debt", 500);
   }
 }
 
@@ -166,7 +167,7 @@ export async function PATCH(request: Request) {
 export async function DELETE(request: Request) {
   const session = await auth();
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   try {
@@ -174,18 +175,18 @@ export async function DELETE(request: Request) {
     const { id } = body;
 
     if (!id) {
-      return NextResponse.json({ error: "Debt ID is required" }, { status: 400 });
+      return validationError("Debt ID is required");
     }
 
     const existing = await prisma.debtAccount.findUnique({ where: { id } });
     if (!existing || existing.userId !== session.user.id) {
-      return NextResponse.json({ error: "Debt not found" }, { status: 404 });
+      return notFoundResponse("Debt");
     }
 
     await prisma.debtAccount.delete({ where: { id } });
-    return NextResponse.json({ success: true });
+    return successResponse({ success: true });
   } catch (error) {
     console.error("Error deleting debt:", error);
-    return NextResponse.json({ error: "Failed to delete debt" }, { status: 500 });
+    return errorResponse("Failed to delete debt", 500);
   }
 }

@@ -1,30 +1,27 @@
-import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { isDemoMode } from "@/lib/demo";
+import { unauthorizedResponse, validationError, errorResponse, successResponse } from "@/lib/api-response";
 
 // --- DELETE: Delete user account ---
 // Requires password confirmation. Cascade deletes handle all related data.
 export async function DELETE(request: Request) {
   if (isDemoMode()) {
-    return NextResponse.json({ error: "Account deletion is not available in demo mode" }, { status: 403 });
+    return errorResponse("Account deletion is not available in demo mode", 403);
   }
 
   const session = await auth();
 
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   try {
     const { password } = await request.json();
 
     if (!password) {
-      return NextResponse.json(
-        { error: "Password is required to delete your account" },
-        { status: 400 }
-      );
+      return validationError("Password is required to delete your account");
     }
 
     // Verify the password
@@ -34,19 +31,13 @@ export async function DELETE(request: Request) {
     });
 
     if (!user?.passwordHash) {
-      return NextResponse.json(
-        { error: "Cannot verify identity" },
-        { status: 400 }
-      );
+      return validationError("Cannot verify identity");
     }
 
     const isValid = await bcrypt.compare(password, user.passwordHash);
 
     if (!isValid) {
-      return NextResponse.json(
-        { error: "Incorrect password" },
-        { status: 400 }
-      );
+      return validationError("Incorrect password");
     }
 
     // Delete the user — cascade deletes handle PlaidItems, Accounts,
@@ -55,12 +46,9 @@ export async function DELETE(request: Request) {
       where: { id: session.user.id },
     });
 
-    return NextResponse.json({ success: true });
+    return successResponse({ success: true });
   } catch (error) {
     console.error("Error deleting account:", error);
-    return NextResponse.json(
-      { error: "Failed to delete account" },
-      { status: 500 }
-    );
+    return errorResponse("Failed to delete account", 500);
   }
 }

@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { unauthorizedResponse, notFoundResponse, validationError, errorResponse, successResponse } from "@/lib/api-response";
 
 // --- GET: Fetch all savings goals for the current user ---
 export async function GET() {
   const session = await auth();
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   try {
@@ -32,7 +33,7 @@ export async function GET() {
     });
   } catch (error) {
     console.error("Error fetching goals:", error);
-    return NextResponse.json({ error: "Failed to fetch goals" }, { status: 500 });
+    return errorResponse("Failed to fetch goals", 500);
   }
 }
 
@@ -40,7 +41,7 @@ export async function GET() {
 export async function POST(request: Request) {
   const session = await auth();
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   try {
@@ -48,12 +49,12 @@ export async function POST(request: Request) {
     const { name, targetAmount, deadline, linkedAccountId } = body;
 
     if (!name || typeof name !== "string") {
-      return NextResponse.json({ error: "Name is required" }, { status: 400 });
+      return validationError("Name is required");
     }
 
     const numTarget = Number(targetAmount);
     if (isNaN(numTarget) || numTarget <= 0) {
-      return NextResponse.json({ error: "Target amount must be positive" }, { status: 400 });
+      return validationError("Target amount must be positive");
     }
 
     // Validate linked account ownership if provided
@@ -62,7 +63,7 @@ export async function POST(request: Request) {
         where: { id: linkedAccountId, plaidItem: { userId: session.user.id } },
       });
       if (!account) {
-        return NextResponse.json({ error: "Account not found" }, { status: 404 });
+        return notFoundResponse("Account");
       }
     }
 
@@ -88,7 +89,7 @@ export async function POST(request: Request) {
     }, { status: 201 });
   } catch (error) {
     console.error("Error creating goal:", error);
-    return NextResponse.json({ error: "Failed to create goal" }, { status: 500 });
+    return errorResponse("Failed to create goal", 500);
   }
 }
 
@@ -96,7 +97,7 @@ export async function POST(request: Request) {
 export async function PATCH(request: Request) {
   const session = await auth();
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   try {
@@ -104,12 +105,12 @@ export async function PATCH(request: Request) {
     const { id, name, targetAmount, currentAmount, deadline, linkedAccountId } = body;
 
     if (!id) {
-      return NextResponse.json({ error: "Goal ID is required" }, { status: 400 });
+      return validationError("Goal ID is required");
     }
 
     const existing = await prisma.savingsGoal.findUnique({ where: { id } });
     if (!existing || existing.userId !== session.user.id) {
-      return NextResponse.json({ error: "Goal not found" }, { status: 404 });
+      return notFoundResponse("Goal");
     }
 
     const data: Record<string, unknown> = {};
@@ -117,14 +118,14 @@ export async function PATCH(request: Request) {
     if (targetAmount !== undefined) {
       const num = Number(targetAmount);
       if (isNaN(num) || num <= 0) {
-        return NextResponse.json({ error: "Target amount must be positive" }, { status: 400 });
+        return validationError("Target amount must be positive");
       }
       data.targetAmount = num;
     }
     if (currentAmount !== undefined) {
       const num = Number(currentAmount);
       if (isNaN(num) || num < 0) {
-        return NextResponse.json({ error: "Current amount must be non-negative" }, { status: 400 });
+        return validationError("Current amount must be non-negative");
       }
       data.currentAmount = num;
     }
@@ -145,7 +146,7 @@ export async function PATCH(request: Request) {
     });
   } catch (error) {
     console.error("Error updating goal:", error);
-    return NextResponse.json({ error: "Failed to update goal" }, { status: 500 });
+    return errorResponse("Failed to update goal", 500);
   }
 }
 
@@ -153,7 +154,7 @@ export async function PATCH(request: Request) {
 export async function DELETE(request: Request) {
   const session = await auth();
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   try {
@@ -161,18 +162,18 @@ export async function DELETE(request: Request) {
     const { id } = body;
 
     if (!id) {
-      return NextResponse.json({ error: "Goal ID is required" }, { status: 400 });
+      return validationError("Goal ID is required");
     }
 
     const existing = await prisma.savingsGoal.findUnique({ where: { id } });
     if (!existing || existing.userId !== session.user.id) {
-      return NextResponse.json({ error: "Goal not found" }, { status: 404 });
+      return notFoundResponse("Goal");
     }
 
     await prisma.savingsGoal.delete({ where: { id } });
-    return NextResponse.json({ success: true });
+    return successResponse({ success: true });
   } catch (error) {
     console.error("Error deleting goal:", error);
-    return NextResponse.json({ error: "Failed to delete goal" }, { status: 500 });
+    return errorResponse("Failed to delete goal", 500);
   }
 }

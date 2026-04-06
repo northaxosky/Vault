@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { isDemoMode } from "@/lib/demo";
+import { unauthorizedResponse, validationError, errorResponse } from "@/lib/api-response";
 
 // --- PATCH: Update user profile (name) ---
 export async function PATCH(request: Request) {
@@ -12,17 +13,14 @@ export async function PATCH(request: Request) {
   const session = await auth();
 
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   try {
     const { name } = await request.json();
 
     if (!name || typeof name !== "string" || name.trim().length === 0) {
-      return NextResponse.json(
-        { error: "Name is required" },
-        { status: 400 }
-      );
+      return validationError("Name is required");
     }
 
     // Capitalize each word, same logic as the register route
@@ -39,9 +37,6 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ user });
   } catch (error) {
     console.error("Error updating profile:", error);
-    return NextResponse.json(
-      { error: "Failed to update profile" },
-      { status: 500 }
-    );
+    return errorResponse("Failed to update profile", 500);
   }
 }

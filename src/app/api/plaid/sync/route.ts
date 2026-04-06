@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { decrypt } from "@/lib/encryption";
 import { isDemoMode } from "@/lib/demo";
 import { rateLimit } from "@/lib/rate-limit";
+import { unauthorizedResponse, errorResponse } from "@/lib/api-response";
 import { syncTransactions } from "@/lib/sync/transactions";
 import { syncRecurring } from "@/lib/sync/recurring";
 import { syncInvestments } from "@/lib/sync/investments";
@@ -44,7 +45,7 @@ export async function POST() {
 
   const session = await auth();
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   const { success } = rateLimit(`plaid-sync:${session.user.id}`, {
@@ -71,12 +72,10 @@ export async function POST() {
       },
     });
 
-    // Fetch user's transaction rules once for all items
     const rules = await prisma.transactionRule.findMany({
       where: { userId: session.user.id },
     });
 
-    // Process all Plaid items in parallel
     const itemResults = await Promise.allSettled(
       plaidItems.map((item) => {
         const accountMap: AccountMap = new Map(
@@ -97,7 +96,6 @@ export async function POST() {
       }),
     );
 
-    // Aggregate results across all items
     const totals: TransactionSyncResult = { added: 0, modified: 0, removed: 0 };
     for (const settled of itemResults) {
       if (settled.status === "fulfilled") {
@@ -107,7 +105,6 @@ export async function POST() {
       }
     }
 
-    // Generate alerts based on the synced data
     await generateAlerts(prisma, session.user.id, totals.added);
 
     return NextResponse.json({
@@ -118,9 +115,6 @@ export async function POST() {
     });
   } catch (error) {
     logPlaidError("sync", error);
-    return NextResponse.json(
-      { error: "Failed to sync" },
-      { status: 500 },
-    );
+    return errorResponse("Failed to sync", 500);
   }
 }

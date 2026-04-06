@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { isDemoMode } from "@/lib/demo";
 import { DEMO_SETTINGS } from "@/lib/demo-data";
+import { unauthorizedResponse, validationError, errorResponse } from "@/lib/api-response";
 
 // --- GET: Fetch user settings (creates defaults if none exist) ---
 export async function GET() {
@@ -13,7 +14,7 @@ export async function GET() {
   const session = await auth();
 
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   try {
@@ -29,10 +30,7 @@ export async function GET() {
     return NextResponse.json({ settings });
   } catch (error) {
     console.error("Error fetching settings:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch settings" },
-      { status: 500 }
-    );
+    return errorResponse("Failed to fetch settings", 500);
   }
 }
 
@@ -45,7 +43,7 @@ export async function PATCH(request: Request) {
   const session = await auth();
 
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   try {
@@ -55,29 +53,20 @@ export async function PATCH(request: Request) {
     if (body.accentHue !== undefined) {
       const hue = Number(body.accentHue);
       if (isNaN(hue) || hue < 0 || hue > 360) {
-        return NextResponse.json(
-          { error: "Accent hue must be a number between 0 and 360" },
-          { status: 400 }
-        );
+        return validationError("Accent hue must be a number between 0 and 360");
       }
     }
 
     // Validate currency if provided
     const allowedCurrencies = ["USD", "EUR", "GBP", "CAD", "AUD", "JPY"];
     if (body.currency && !allowedCurrencies.includes(body.currency)) {
-      return NextResponse.json(
-        { error: `Currency must be one of: ${allowedCurrencies.join(", ")}` },
-        { status: 400 }
-      );
+      return validationError(`Currency must be one of: ${allowedCurrencies.join(", ")}`);
     }
 
     // Validate dateFormat if provided
     const allowedFormats = ["MM/DD/YYYY", "DD/MM/YYYY", "YYYY-MM-DD"];
     if (body.dateFormat && !allowedFormats.includes(body.dateFormat)) {
-      return NextResponse.json(
-        { error: `Date format must be one of: ${allowedFormats.join(", ")}` },
-        { status: 400 }
-      );
+      return validationError(`Date format must be one of: ${allowedFormats.join(", ")}`);
     }
 
     // Build the update data — only include fields that were sent
@@ -105,9 +94,6 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ settings });
   } catch (error) {
     console.error("Error updating settings:", error);
-    return NextResponse.json(
-      { error: "Failed to update settings" },
-      { status: 500 }
-    );
+    return errorResponse("Failed to update settings", 500);
   }
 }

@@ -5,15 +5,13 @@ import { plaidClient, extractPlaidError, logPlaidError } from "@/lib/plaid";
 import { prisma } from "@/lib/prisma";
 import { encrypt } from "@/lib/encryption";
 import { rateLimit } from "@/lib/rate-limit";
+import { unauthorizedResponse, validationError } from "@/lib/api-response";
 
 export async function POST(request: Request) {
   const session = await auth();
 
   if (!session?.user?.id) {
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401 }
-    );
+    return unauthorizedResponse();
   }
 
   const { success } = rateLimit(`plaid-exchange:${session.user.id}`, {
@@ -31,10 +29,7 @@ export async function POST(request: Request) {
     const { publicToken } = await request.json();
 
     if (!publicToken) {
-      return NextResponse.json(
-        { error: "Public token is required" },
-        { status: 400 }
-      );
+      return validationError("Public token is required");
     }
 
     // --- Step 3 of the Plaid flow ---

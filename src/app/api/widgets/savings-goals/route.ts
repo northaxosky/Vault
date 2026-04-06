@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { isDemoMode } from "@/lib/demo";
 import { DEMO_SAVINGS_GOALS } from "@/lib/demo-data";
+import { unauthorizedResponse, errorResponse } from "@/lib/api-response";
 
 export async function GET() {
   if (isDemoMode()) {
@@ -11,7 +12,7 @@ export async function GET() {
 
   const session = await auth();
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   try {
@@ -43,6 +44,6 @@ export async function GET() {
     });
   } catch (error) {
     console.error("Error fetching savings goals widget:", error);
-    return NextResponse.json({ error: "Failed to fetch savings goals" }, { status: 500 });
+    return errorResponse("Failed to fetch savings goals", 500);
   }
 }

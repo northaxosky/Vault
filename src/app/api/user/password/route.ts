@@ -4,13 +4,14 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { validatePassword, BCRYPT_ROUNDS } from "@/lib/validation";
 import { rateLimit } from "@/lib/rate-limit";
+import { unauthorizedResponse, validationError, errorResponse, successResponse } from "@/lib/api-response";
 
 // --- PATCH: Change password ---
 export async function PATCH(request: Request) {
   const session = await auth();
 
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   const { success } = rateLimit(`password-change:${session.user.id}`, {
@@ -28,18 +29,12 @@ export async function PATCH(request: Request) {
     const { currentPassword, newPassword } = await request.json();
 
     if (!currentPassword || !newPassword) {
-      return NextResponse.json(
-        { error: "Current and new passwords are required" },
-        { status: 400 }
-      );
+      return validationError("Current and new passwords are required");
     }
 
     const passwordCheck = validatePassword(newPassword);
     if (!passwordCheck.valid) {
-      return NextResponse.json(
-        { error: passwordCheck.message },
-        { status: 400 }
-      );
+      return validationError(passwordCheck.message);
     }
 
     // Fetch the user's current password hash
@@ -49,20 +44,14 @@ export async function PATCH(request: Request) {
     });
 
     if (!user?.passwordHash) {
-      return NextResponse.json(
-        { error: "Password change not available for this account" },
-        { status: 400 }
-      );
+      return validationError("Password change not available for this account");
     }
 
     // Verify the current password
     const isValid = await bcrypt.compare(currentPassword, user.passwordHash);
 
     if (!isValid) {
-      return NextResponse.json(
-        { error: "Current password is incorrect" },
-        { status: 400 }
-      );
+      return validationError("Current password is incorrect");
     }
 
     // Hash the new password
@@ -73,12 +62,9 @@ export async function PATCH(request: Request) {
       data: { passwordHash: newHash },
     });
 
-    return NextResponse.json({ success: true });
+    return successResponse({ success: true });
   } catch (error) {
     console.error("Error changing password:", error);
-    return NextResponse.json(
-      { error: "Failed to change password" },
-      { status: 500 }
-    );
+    return errorResponse("Failed to change password", 500);
   }
 }

@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { isDemoMode } from "@/lib/demo";
 import { DEMO_RECURRING } from "@/lib/demo-data";
+import { unauthorizedResponse } from "@/lib/api-response";
 
 export async function GET() {
   if (isDemoMode()) {
@@ -11,7 +12,7 @@ export async function GET() {
 
   const session = await auth();
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   const now = new Date();
