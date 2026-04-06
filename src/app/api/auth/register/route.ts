@@ -47,7 +47,10 @@ export async function POST(request: Request) {
     const genericMessage =
       "Registration successful. Please check your email to verify your account.";
 
-    // Return identical response whether email exists or not to prevent enumeration
+    // Hash password BEFORE the DB lookup so both paths take ~equal time,
+    // preventing timing-based user-enumeration attacks.
+    const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
+
     const existingUser = await prisma.user.findUnique({
       where: { email },
     });
@@ -58,9 +61,6 @@ export async function POST(request: Request) {
         { status: 200, headers: { "X-RateLimit-Remaining": String(remaining) } }
       );
     }
-
-    // --- Hash the password ---
-    const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
 
     // --- Capitalize each word in the name ---
     const formattedName = name
