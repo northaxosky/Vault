@@ -2,13 +2,14 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { CATEGORY_CONFIG } from "@/lib/categories";
+import { unauthorizedResponse, notFoundResponse, validationError, errorResponse, successResponse } from "@/lib/api-response";
 
 // --- GET: Fetch all budgets for the current user ---
 export async function GET() {
   const session = await auth();
 
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   try {
@@ -26,10 +27,7 @@ export async function GET() {
     });
   } catch (error) {
     console.error("Error fetching budgets:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch budgets" },
-      { status: 500 }
-    );
+    return errorResponse("Failed to fetch budgets", 500);
   }
 }
 
@@ -38,7 +36,7 @@ export async function POST(request: Request) {
   const session = await auth();
 
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   try {
@@ -47,19 +45,13 @@ export async function POST(request: Request) {
 
     // Validate category is a known Plaid category
     if (!category || !CATEGORY_CONFIG[category]) {
-      return NextResponse.json(
-        { error: "Invalid category" },
-        { status: 400 }
-      );
+      return validationError("Invalid category");
     }
 
     // Validate amount is a positive number
     const numAmount = Number(amount);
     if (isNaN(numAmount) || numAmount <= 0) {
-      return NextResponse.json(
-        { error: "Amount must be a positive number" },
-        { status: 400 }
-      );
+      return validationError("Amount must be a positive number");
     }
 
     const budget = await prisma.budget.create({
@@ -86,16 +78,10 @@ export async function POST(request: Request) {
       error instanceof Error &&
       error.message.includes("Unique constraint")
     ) {
-      return NextResponse.json(
-        { error: "A budget already exists for this category" },
-        { status: 409 }
-      );
+      return errorResponse("A budget already exists for this category", 409);
     }
     console.error("Error creating budget:", error);
-    return NextResponse.json(
-      { error: "Failed to create budget" },
-      { status: 500 }
-    );
+    return errorResponse("Failed to create budget", 500);
   }
 }
 
@@ -104,7 +90,7 @@ export async function PATCH(request: Request) {
   const session = await auth();
 
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   try {
@@ -112,27 +98,18 @@ export async function PATCH(request: Request) {
     const { id, amount } = body;
 
     if (!id) {
-      return NextResponse.json(
-        { error: "Budget ID is required" },
-        { status: 400 }
-      );
+      return validationError("Budget ID is required");
     }
 
     const numAmount = Number(amount);
     if (isNaN(numAmount) || numAmount <= 0) {
-      return NextResponse.json(
-        { error: "Amount must be a positive number" },
-        { status: 400 }
-      );
+      return validationError("Amount must be a positive number");
     }
 
     // Verify ownership before updating
     const existing = await prisma.budget.findUnique({ where: { id } });
     if (!existing || existing.userId !== session.user.id) {
-      return NextResponse.json(
-        { error: "Budget not found" },
-        { status: 404 }
-      );
+      return notFoundResponse("Budget");
     }
 
     const budget = await prisma.budget.update({
@@ -149,10 +126,7 @@ export async function PATCH(request: Request) {
     });
   } catch (error) {
     console.error("Error updating budget:", error);
-    return NextResponse.json(
-      { error: "Failed to update budget" },
-      { status: 500 }
-    );
+    return errorResponse("Failed to update budget", 500);
   }
 }
 
@@ -161,7 +135,7 @@ export async function DELETE(request: Request) {
   const session = await auth();
 
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   try {
@@ -169,29 +143,20 @@ export async function DELETE(request: Request) {
     const { id } = body;
 
     if (!id) {
-      return NextResponse.json(
-        { error: "Budget ID is required" },
-        { status: 400 }
-      );
+      return validationError("Budget ID is required");
     }
 
     // Verify ownership before deleting
     const existing = await prisma.budget.findUnique({ where: { id } });
     if (!existing || existing.userId !== session.user.id) {
-      return NextResponse.json(
-        { error: "Budget not found" },
-        { status: 404 }
-      );
+      return notFoundResponse("Budget");
     }
 
     await prisma.budget.delete({ where: { id } });
 
-    return NextResponse.json({ success: true });
+    return successResponse({ success: true });
   } catch (error) {
     console.error("Error deleting budget:", error);
-    return NextResponse.json(
-      { error: "Failed to delete budget" },
-      { status: 500 }
-    );
+    return errorResponse("Failed to delete budget", 500);
   }
 }

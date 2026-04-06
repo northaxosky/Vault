@@ -3,6 +3,7 @@ import { randomUUID } from "crypto";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { isDemoMode } from "@/lib/demo";
+import { unauthorizedResponse, validationError, errorResponse } from "@/lib/api-response";
 
 const VALID_ACCOUNT_TYPES = ["depository", "credit", "investment", "loan"] as const;
 type AccountType = (typeof VALID_ACCOUNT_TYPES)[number];
@@ -13,15 +14,12 @@ function isValidAccountType(value: string): value is AccountType {
 
 export async function POST(request: Request) {
   if (isDemoMode()) {
-    return NextResponse.json(
-      { error: "Manual account creation is not available in demo mode" },
-      { status: 400 },
-    );
+    return validationError("Manual account creation is not available in demo mode");
   }
 
   const session = await auth();
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   try {
@@ -30,45 +28,27 @@ export async function POST(request: Request) {
 
     // --- Validate required fields ---
     if (!institutionName || typeof institutionName !== "string") {
-      return NextResponse.json(
-        { error: "institutionName is required" },
-        { status: 400 },
-      );
+      return validationError("institutionName is required");
     }
     if (!accountName || typeof accountName !== "string") {
-      return NextResponse.json(
-        { error: "accountName is required" },
-        { status: 400 },
-      );
+      return validationError("accountName is required");
     }
     if (institutionName.trim().length === 0 || institutionName.length > 100) {
-      return NextResponse.json(
-        { error: "institutionName must be between 1 and 100 characters" },
-        { status: 400 },
-      );
+      return validationError("institutionName must be between 1 and 100 characters");
     }
     if (accountName.trim().length === 0 || accountName.length > 100) {
-      return NextResponse.json(
-        { error: "accountName must be between 1 and 100 characters" },
-        { status: 400 },
-      );
+      return validationError("accountName must be between 1 and 100 characters");
     }
 
     // --- Validate accountType ---
     if (!accountType || typeof accountType !== "string" || !isValidAccountType(accountType)) {
-      return NextResponse.json(
-        { error: `accountType must be one of: ${VALID_ACCOUNT_TYPES.join(", ")}` },
-        { status: 400 },
-      );
+      return validationError(`accountType must be one of: ${VALID_ACCOUNT_TYPES.join(", ")}`);
     }
 
     // --- Validate optional fields ---
     if (accountSubtype !== undefined && accountSubtype !== null) {
       if (typeof accountSubtype !== "string" || accountSubtype.length > 100) {
-        return NextResponse.json(
-          { error: "accountSubtype must be a string of at most 100 characters" },
-          { status: 400 },
-        );
+        return validationError("accountSubtype must be a string of at most 100 characters");
       }
     }
 
@@ -77,10 +57,7 @@ export async function POST(request: Request) {
       : 0;
 
     if (isNaN(balance)) {
-      return NextResponse.json(
-        { error: "startingBalance must be a valid number" },
-        { status: 400 },
-      );
+      return validationError("startingBalance must be a valid number");
     }
 
     // --- Create the manual PlaidItem + Account in a transaction ---
@@ -124,24 +101,18 @@ export async function POST(request: Request) {
     );
   } catch (error) {
     console.error("Error creating manual account:", error);
-    return NextResponse.json(
-      { error: "Failed to create manual account" },
-      { status: 500 },
-    );
+    return errorResponse("Failed to create manual account", 500);
   }
 }
 
 export async function GET() {
   if (isDemoMode()) {
-    return NextResponse.json(
-      { error: "Manual accounts are not available in demo mode" },
-      { status: 400 },
-    );
+    return validationError("Manual accounts are not available in demo mode");
   }
 
   const session = await auth();
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   try {
@@ -179,9 +150,6 @@ export async function GET() {
     return NextResponse.json(response);
   } catch (error) {
     console.error("Error fetching manual accounts:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch manual accounts" },
-      { status: 500 },
-    );
+    return errorResponse("Failed to fetch manual accounts", 500);
   }
 }

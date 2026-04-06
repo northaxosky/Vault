@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { parseCsv, parseCsvText, type CsvFormatId } from "@/lib/csv-parser";
 import { detectPortfolioFormat, parsePortfolioCsv } from "@/lib/portfolio-parser";
+import { unauthorizedResponse, validationError, errorResponse } from "@/lib/api-response";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
 const MAX_PREVIEW_ROWS = 5;
@@ -21,7 +22,7 @@ const VALID_FORMATS: Set<string> = new Set([
 export async function POST(request: Request) {
   const session = await auth();
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   try {
@@ -30,24 +31,15 @@ export async function POST(request: Request) {
     const formatRaw = formData.get("format");
 
     if (!file || !(file instanceof File)) {
-      return NextResponse.json(
-        { error: "A CSV file is required" },
-        { status: 400 },
-      );
+      return validationError("A CSV file is required");
     }
 
     if (file.size === 0) {
-      return NextResponse.json(
-        { error: "The uploaded file is empty" },
-        { status: 400 },
-      );
+      return validationError("The uploaded file is empty");
     }
 
     if (file.size > MAX_FILE_SIZE) {
-      return NextResponse.json(
-        { error: "File exceeds the 5 MB size limit" },
-        { status: 400 },
-      );
+      return validationError("File exceeds the 5 MB size limit");
     }
 
     const csvText = await file.text();
@@ -58,7 +50,7 @@ export async function POST(request: Request) {
       const portfolio = parsePortfolioCsv(csvText);
 
       if (portfolio.positions.length === 0 && portfolio.cashPositions.length === 0 && portfolio.errors.length > 0) {
-        return NextResponse.json({ error: portfolio.errors[0] }, { status: 400 });
+        return validationError(portfolio.errors[0]);
       }
 
       const positionTotal = portfolio.positions.reduce((sum, p) => sum + p.currentValue, 0);
@@ -92,7 +84,7 @@ export async function POST(request: Request) {
     const result = parseCsv(csvText, formatOverride);
 
     if (result.transactions.length === 0 && result.errors.length > 0) {
-      return NextResponse.json({ error: result.errors[0] }, { status: 400 });
+      return validationError(result.errors[0]);
     }
 
     return NextResponse.json({
@@ -110,9 +102,6 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error("CSV preview error:", error);
-    return NextResponse.json(
-      { error: "Failed to parse CSV" },
-      { status: 500 },
-    );
+    return errorResponse("Failed to parse CSV", 500);
   }
 }

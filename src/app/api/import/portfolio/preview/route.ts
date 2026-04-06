@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { parsePortfolioCsv } from "@/lib/portfolio-parser";
+import { unauthorizedResponse, validationError, errorResponse } from "@/lib/api-response";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
 const MAX_PREVIEW_ROWS = 20;
@@ -12,7 +13,7 @@ const MAX_PREVIEW_ROWS = 20;
 export async function POST(request: Request) {
   const session = await auth();
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   try {
@@ -20,24 +21,15 @@ export async function POST(request: Request) {
     const file = formData.get("file");
 
     if (!file || !(file instanceof File)) {
-      return NextResponse.json(
-        { error: "A CSV file is required" },
-        { status: 400 },
-      );
+      return validationError("A CSV file is required");
     }
 
     if (file.size === 0) {
-      return NextResponse.json(
-        { error: "The uploaded file is empty" },
-        { status: 400 },
-      );
+      return validationError("The uploaded file is empty");
     }
 
     if (file.size > MAX_FILE_SIZE) {
-      return NextResponse.json(
-        { error: "File exceeds the 5 MB size limit" },
-        { status: 400 },
-      );
+      return validationError("File exceeds the 5 MB size limit");
     }
 
     const csvText = await file.text();
@@ -48,10 +40,7 @@ export async function POST(request: Request) {
       result.cashPositions.length === 0 &&
       result.errors.length > 0
     ) {
-      return NextResponse.json(
-        { error: result.errors[0] },
-        { status: 400 },
-      );
+      return validationError(result.errors[0]);
     }
 
     // Compute total value (positions + cash)
@@ -79,9 +68,6 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error("Portfolio preview error:", error);
-    return NextResponse.json(
-      { error: "Failed to parse portfolio CSV" },
-      { status: 500 },
-    );
+    return errorResponse("Failed to parse portfolio CSV", 500);
   }
 }

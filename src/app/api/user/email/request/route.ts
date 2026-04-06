@@ -4,30 +4,25 @@ import bcrypt from "bcryptjs";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { sendEmailChangeVerification } from "@/lib/email";
+import { unauthorizedResponse, validationError, errorResponse } from "@/lib/api-response";
 
 export async function POST(request: Request) {
   const session = await auth();
 
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   try {
     const { newEmail, password } = await request.json();
 
     if (!newEmail || !password) {
-      return NextResponse.json(
-        { error: "New email and password are required" },
-        { status: 400 },
-      );
+      return validationError("New email and password are required");
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(newEmail)) {
-      return NextResponse.json(
-        { error: "Invalid email address" },
-        { status: 400 },
-      );
+      return validationError("Invalid email address");
     }
 
     const user = await prisma.user.findUnique({
@@ -36,25 +31,16 @@ export async function POST(request: Request) {
     });
 
     if (!user?.passwordHash) {
-      return NextResponse.json(
-        { error: "Password verification not available for this account" },
-        { status: 400 },
-      );
+      return validationError("Password verification not available for this account");
     }
 
     if (newEmail.toLowerCase() === user.email.toLowerCase()) {
-      return NextResponse.json(
-        { error: "New email must be different from current email" },
-        { status: 400 },
-      );
+      return validationError("New email must be different from current email");
     }
 
     const isValid = await bcrypt.compare(password, user.passwordHash);
     if (!isValid) {
-      return NextResponse.json(
-        { error: "Password is incorrect" },
-        { status: 401 },
-      );
+      return errorResponse("Password is incorrect", 401);
     }
 
     const existingUser = await prisma.user.findUnique({
@@ -62,10 +48,7 @@ export async function POST(request: Request) {
     });
 
     if (existingUser) {
-      return NextResponse.json(
-        { error: "Email is already in use" },
-        { status: 409 },
-      );
+      return errorResponse("Email is already in use", 409);
     }
 
     // Clean up any existing tokens for this user
@@ -92,9 +75,6 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error("Error requesting email change:", error);
-    return NextResponse.json(
-      { error: "Failed to process email change request" },
-      { status: 500 },
-    );
+    return errorResponse("Failed to process email change request", 500);
   }
 }

@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { unauthorizedResponse, notFoundResponse, errorResponse } from "@/lib/api-response";
 
 // --- GET: Export all user data as JSON ---
 export async function GET() {
   const session = await auth();
 
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   try {
@@ -69,7 +70,7 @@ export async function GET() {
     });
 
     if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
+      return notFoundResponse("User");
     }
 
     // Return as a downloadable JSON file
@@ -81,9 +82,6 @@ export async function GET() {
     });
   } catch (error) {
     console.error("Error exporting data:", error);
-    return NextResponse.json(
-      { error: "Failed to export data" },
-      { status: 500 }
-    );
+    return errorResponse("Failed to export data", 500);
   }
 }

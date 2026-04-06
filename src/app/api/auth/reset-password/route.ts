@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { rateLimit } from "@/lib/rate-limit";
 import { validatePassword, BCRYPT_ROUNDS } from "@/lib/validation";
+import { errorResponse } from "@/lib/api-response";
 
 export async function POST(request: Request) {
   try {
@@ -68,9 +69,6 @@ export async function POST(request: Request) {
     );
   } catch (error) {
     console.error("Password reset error:", error);
-    return NextResponse.json(
-      { error: "Something went wrong" },
-      { status: 500 }
-    );
+    return errorResponse("Something went wrong", 500);
   }
 }

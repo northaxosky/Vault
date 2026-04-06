@@ -5,6 +5,7 @@ import { isDemoMode } from "@/lib/demo";
 import { rateLimit } from "@/lib/rate-limit";
 import { stockProvider } from "@/lib/stock-provider";
 import type { StockQuote } from "@/lib/stock-provider";
+import { unauthorizedResponse, validationError, errorResponse, successResponse } from "@/lib/api-response";
 
 const MAX_WATCHLIST_ITEMS = 50;
 
@@ -54,7 +55,7 @@ export async function GET() {
 
   const session = await auth();
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   try {
@@ -85,10 +86,7 @@ export async function GET() {
     });
   } catch (error) {
     console.error("Error fetching watchlist:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch watchlist" },
-      { status: 500 }
-    );
+    return errorResponse("Failed to fetch watchlist", 500);
   }
 }
 
@@ -111,7 +109,7 @@ export async function POST(request: Request) {
 
   const session = await auth();
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   try {
@@ -119,17 +117,11 @@ export async function POST(request: Request) {
     const { ticker, name } = body;
 
     if (!ticker || typeof ticker !== "string") {
-      return NextResponse.json(
-        { error: "Ticker is required" },
-        { status: 400 }
-      );
+      return validationError("Ticker is required");
     }
 
     if (!name || typeof name !== "string") {
-      return NextResponse.json(
-        { error: "Name is required" },
-        { status: 400 }
-      );
+      return validationError("Name is required");
     }
 
     const { success } = rateLimit(`watchlist:${session.user.id}`, {
@@ -137,20 +129,14 @@ export async function POST(request: Request) {
       windowMs: 60_000,
     });
     if (!success) {
-      return NextResponse.json(
-        { error: "Too many requests" },
-        { status: 429 }
-      );
+      return errorResponse("Too many requests", 429);
     }
 
     const count = await prisma.watchlistItem.count({
       where: { userId: session.user.id },
     });
     if (count >= MAX_WATCHLIST_ITEMS) {
-      return NextResponse.json(
-        { error: `Maximum ${MAX_WATCHLIST_ITEMS} watchlist items allowed` },
-        { status: 400 }
-      );
+      return validationError(`Maximum ${MAX_WATCHLIST_ITEMS} watchlist items allowed`);
     }
 
     const item = await prisma.watchlistItem.create({
@@ -177,28 +163,22 @@ export async function POST(request: Request) {
       error instanceof Error &&
       error.message.includes("Unique constraint")
     ) {
-      return NextResponse.json(
-        { error: "Ticker already in watchlist" },
-        { status: 409 }
-      );
+      return errorResponse("Ticker already in watchlist", 409);
     }
     console.error("Error adding to watchlist:", error);
-    return NextResponse.json(
-      { error: "Failed to add to watchlist" },
-      { status: 500 }
-    );
+    return errorResponse("Failed to add to watchlist", 500);
   }
 }
 
 // --- DELETE: Remove ticker from watchlist ---
 export async function DELETE(request: Request) {
   if (isDemoMode()) {
-    return NextResponse.json({ success: true });
+    return successResponse({ success: true });
   }
 
   const session = await auth();
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   try {
@@ -206,10 +186,7 @@ export async function DELETE(request: Request) {
     const { ticker } = body;
 
     if (!ticker || typeof ticker !== "string") {
-      return NextResponse.json(
-        { error: "Ticker is required" },
-        { status: 400 }
-      );
+      return validationError("Ticker is required");
     }
 
     await prisma.watchlistItem.deleteMany({
@@ -219,12 +196,9 @@ export async function DELETE(request: Request) {
       },
     });
 
-    return NextResponse.json({ success: true });
+    return successResponse({ success: true });
   } catch (error) {
     console.error("Error removing from watchlist:", error);
-    return NextResponse.json(
-      { error: "Failed to remove from watchlist" },
-      { status: 500 }
-    );
+    return errorResponse("Failed to remove from watchlist", 500);
   }
 }

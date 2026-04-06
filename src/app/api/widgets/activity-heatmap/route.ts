@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { isDemoMode } from "@/lib/demo";
+import { unauthorizedResponse, errorResponse } from "@/lib/api-response";
 
 function seededCount(dateStr: string, isWeekend: boolean): number {
   let hash = 0;
@@ -32,7 +33,7 @@ export async function GET() {
   const session = await auth();
 
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   try {
@@ -66,9 +67,6 @@ export async function GET() {
     return NextResponse.json({ days });
   } catch (error) {
     console.error("Error fetching activity heatmap:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch activity data" },
-      { status: 500 }
-    );
+    return errorResponse("Failed to fetch activity data", 500);
   }
 }

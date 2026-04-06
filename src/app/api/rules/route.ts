@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { CATEGORY_CONFIG } from "@/lib/categories";
+import { unauthorizedResponse, notFoundResponse, validationError, errorResponse, successResponse } from "@/lib/api-response";
 
 // --- Helpers ---
 
@@ -62,7 +63,7 @@ async function applyRuleRetroactively(
 export async function GET() {
   const session = await auth();
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   const rules = await prisma.transactionRule.findMany({
@@ -78,14 +79,14 @@ export async function GET() {
 export async function POST(request: Request) {
   const session = await auth();
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   try {
     const body = await request.json();
     const error = validateRule(body);
     if (error) {
-      return NextResponse.json({ error }, { status: 400 });
+      return validationError(error);
     }
 
     const { matchField, matchPattern, overrideName, overrideCategory } = body;
@@ -112,7 +113,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ rule }, { status: 201 });
   } catch (err) {
     console.error("Error creating rule:", err);
-    return NextResponse.json({ error: "Failed to create rule" }, { status: 500 });
+    return errorResponse("Failed to create rule", 500);
   }
 }
 
@@ -121,7 +122,7 @@ export async function POST(request: Request) {
 export async function PATCH(request: Request) {
   const session = await auth();
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   try {
@@ -129,18 +130,18 @@ export async function PATCH(request: Request) {
     const { id, matchField, matchPattern, overrideName, overrideCategory } = body;
 
     if (!id) {
-      return NextResponse.json({ error: "Rule ID is required" }, { status: 400 });
+      return validationError("Rule ID is required");
     }
 
     const error = validateRule(body);
     if (error) {
-      return NextResponse.json({ error }, { status: 400 });
+      return validationError(error);
     }
 
     // Verify ownership
     const existing = await prisma.transactionRule.findUnique({ where: { id } });
     if (!existing || existing.userId !== session.user.id) {
-      return NextResponse.json({ error: "Rule not found" }, { status: 404 });
+      return notFoundResponse("Rule");
     }
 
     const rule = await prisma.transactionRule.update({
@@ -165,7 +166,7 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ rule });
   } catch (err) {
     console.error("Error updating rule:", err);
-    return NextResponse.json({ error: "Failed to update rule" }, { status: 500 });
+    return errorResponse("Failed to update rule", 500);
   }
 }
 
@@ -174,27 +175,27 @@ export async function PATCH(request: Request) {
 export async function DELETE(request: Request) {
   const session = await auth();
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   try {
     const { id } = await request.json();
 
     if (!id) {
-      return NextResponse.json({ error: "Rule ID is required" }, { status: 400 });
+      return validationError("Rule ID is required");
     }
 
     // Verify ownership
     const existing = await prisma.transactionRule.findUnique({ where: { id } });
     if (!existing || existing.userId !== session.user.id) {
-      return NextResponse.json({ error: "Rule not found" }, { status: 404 });
+      return notFoundResponse("Rule");
     }
 
     await prisma.transactionRule.delete({ where: { id } });
 
-    return NextResponse.json({ success: true });
+    return successResponse({ success: true });
   } catch (err) {
     console.error("Error deleting rule:", err);
-    return NextResponse.json({ error: "Failed to delete rule" }, { status: 500 });
+    return errorResponse("Failed to delete rule", 500);
   }
 }

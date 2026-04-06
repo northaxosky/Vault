@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getCategoryLabel } from "@/lib/categories";
 import { isDemoMode } from "@/lib/demo";
 import { DEMO_BUDGETS } from "@/lib/demo-data";
+import { unauthorizedResponse, errorResponse } from "@/lib/api-response";
 
 export async function GET() {
   if (isDemoMode()) {
@@ -13,7 +14,7 @@ export async function GET() {
   const session = await auth();
 
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   try {
@@ -72,9 +73,6 @@ export async function GET() {
     return NextResponse.json({ budgets: result });
   } catch (error) {
     console.error("Error fetching budget overview:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch budget overview" },
-      { status: 500 }
-    );
+    return errorResponse("Failed to fetch budget overview", 500);
   }
 }

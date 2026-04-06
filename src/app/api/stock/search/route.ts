@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { isDemoMode } from "@/lib/demo";
 import { rateLimit } from "@/lib/rate-limit";
 import { stockProvider } from "@/lib/stock-provider";
+import { unauthorizedResponse, validationError, errorResponse } from "@/lib/api-response";
 
 const DEMO_RESULTS = [
   { ticker: "AAPL", name: "Apple Inc.", type: "Common Stock", exchange: "NASDAQ" },
@@ -26,7 +27,7 @@ export async function GET(request: Request) {
 
   const session = await auth();
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   try {
@@ -34,10 +35,7 @@ export async function GET(request: Request) {
     const query = (url.searchParams.get("q") ?? "").trim();
 
     if (!query) {
-      return NextResponse.json(
-        { error: "Query parameter 'q' is required" },
-        { status: 400 }
-      );
+      return validationError("Query parameter 'q' is required");
     }
 
     const { success } = rateLimit(`stock-search:${session.user.id}`, {
@@ -45,19 +43,13 @@ export async function GET(request: Request) {
       windowMs: 60_000,
     });
     if (!success) {
-      return NextResponse.json(
-        { error: "Too many requests" },
-        { status: 429 }
-      );
+      return errorResponse("Too many requests", 429);
     }
 
     const results = await stockProvider.searchTickers(query);
     return NextResponse.json({ results });
   } catch (error) {
     console.error("Error searching tickers:", error);
-    return NextResponse.json(
-      { error: "Failed to search tickers" },
-      { status: 500 }
-    );
+    return errorResponse("Failed to search tickers", 500);
   }
 }

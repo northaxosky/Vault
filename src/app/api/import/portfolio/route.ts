@@ -7,6 +7,7 @@ import {
   detectPortfolioFormat,
 } from "@/lib/portfolio-parser";
 import { parseCsvLine } from "@/lib/csv-parser";
+import { unauthorizedResponse, validationError, errorResponse } from "@/lib/api-response";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
 
@@ -17,7 +18,7 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
 export async function GET() {
   const session = await auth();
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   return NextResponse.json({
@@ -34,14 +35,11 @@ export async function POST(request: Request) {
   // --- Auth ---
   const session = await auth();
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   if (isDemoMode()) {
-    return NextResponse.json(
-      { error: "Portfolio import is disabled in demo mode" },
-      { status: 400 },
-    );
+    return validationError("Portfolio import is disabled in demo mode");
   }
 
   const userId = session.user.id;
@@ -53,24 +51,15 @@ export async function POST(request: Request) {
 
     // --- Validate file ---
     if (!file || !(file instanceof File)) {
-      return NextResponse.json(
-        { error: "A CSV file is required" },
-        { status: 400 },
-      );
+      return validationError("A CSV file is required");
     }
 
     if (file.size === 0) {
-      return NextResponse.json(
-        { error: "The uploaded file is empty" },
-        { status: 400 },
-      );
+      return validationError("The uploaded file is empty");
     }
 
     if (file.size > MAX_FILE_SIZE) {
-      return NextResponse.json(
-        { error: "File exceeds the 5 MB size limit" },
-        { status: 400 },
-      );
+      return validationError("File exceeds the 5 MB size limit");
     }
 
     // --- Read CSV text and verify format ---
@@ -81,21 +70,14 @@ export async function POST(request: Request) {
       .filter((l) => l.trim().length > 0);
 
     if (lines.length < 2) {
-      return NextResponse.json(
-        { error: "CSV file is empty or has no data rows" },
-        { status: 400 },
-      );
+      return validationError("CSV file is empty or has no data rows");
     }
 
     const headers = parseCsvLine(lines[0]);
     if (!detectPortfolioFormat(headers)) {
-      return NextResponse.json(
-        {
-          error:
-            "File does not appear to be a Fidelity portfolio positions CSV. " +
-            "Please export your positions from Fidelity and try again.",
-        },
-        { status: 400 },
+      return validationError(
+        "File does not appear to be a Fidelity portfolio positions CSV. " +
+        "Please export your positions from Fidelity and try again.",
       );
     }
 
@@ -306,9 +288,6 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error("Portfolio import error:", error);
-    return NextResponse.json(
-      { error: "Failed to import portfolio CSV" },
-      { status: 500 },
-    );
+    return errorResponse("Failed to import portfolio CSV", 500);
   }
 }

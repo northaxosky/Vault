@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { isDemoMode } from "@/lib/demo";
+import { unauthorizedResponse, errorResponse } from "@/lib/api-response";
 
 export async function GET(request: Request) {
   if (isDemoMode()) {
@@ -10,7 +11,7 @@ export async function GET(request: Request) {
 
   const session = await auth();
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   const { searchParams } = new URL(request.url);
@@ -84,6 +85,6 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     console.error("Error searching:", error);
-    return NextResponse.json({ error: "Search failed" }, { status: 500 });
+    return errorResponse("Search failed", 500);
   }
 }

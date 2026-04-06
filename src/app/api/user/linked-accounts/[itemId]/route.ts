@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { unauthorizedResponse, notFoundResponse, errorResponse } from "@/lib/api-response";
 
 // --- DELETE: Unlink a specific bank connection ---
 // Cascade deletes will remove all associated accounts, transactions, and holdings.
@@ -11,7 +12,7 @@ export async function DELETE(
   const session = await auth();
 
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   try {
@@ -24,17 +25,11 @@ export async function DELETE(
     });
 
     if (!plaidItem) {
-      return NextResponse.json(
-        { error: "Linked account not found" },
-        { status: 404 }
-      );
+      return notFoundResponse("Linked account");
     }
 
     if (plaidItem.userId !== session.user.id) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 403 }
-      );
+      return errorResponse("Unauthorized", 403);
     }
 
     // Delete the PlaidItem — cascade deletes handle accounts,
@@ -49,9 +44,6 @@ export async function DELETE(
     });
   } catch (error) {
     console.error("Error unlinking account:", error);
-    return NextResponse.json(
-      { error: "Failed to unlink account" },
-      { status: 500 }
-    );
+    return errorResponse("Failed to unlink account", 500);
   }
 }

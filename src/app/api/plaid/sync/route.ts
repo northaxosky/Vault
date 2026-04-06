@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { decrypt } from "@/lib/encryption";
 import { sendAlertEmail } from "@/lib/email";
 import { isDemoMode } from "@/lib/demo";
+import { unauthorizedResponse, errorResponse } from "@/lib/api-response";
 
 export async function POST() {
   if (isDemoMode()) {
@@ -13,7 +14,7 @@ export async function POST() {
 
   const session = await auth();
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   try {
@@ -594,9 +595,6 @@ export async function POST() {
     });
   } catch (error) {
     logPlaidError("sync", error);
-    return NextResponse.json(
-      { error: "Failed to sync" },
-      { status: 500 }
-    );
+    return errorResponse("Failed to sync", 500);
   }
 }
