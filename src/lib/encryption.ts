@@ -7,13 +7,12 @@ const TAG_LENGTH = 16;
 function getKey(): Buffer {
   const key = process.env.ENCRYPTION_KEY;
   if (!key) throw new Error("ENCRYPTION_KEY environment variable is not set");
-  const buf = Buffer.from(key, "hex");
-  if (buf.length !== 32) {
+  if (!/^[0-9a-fA-F]{64}$/.test(key)) {
     throw new Error(
-      `ENCRYPTION_KEY must be exactly 64 hex characters (32 bytes for AES-256), got ${buf.length} bytes`,
+      "ENCRYPTION_KEY must be exactly 64 hex characters (32 bytes for AES-256-GCM)",
     );
   }
-  return buf;
+  return Buffer.from(key, "hex");
 }
 
 export function encrypt(plaintext: string): string {
