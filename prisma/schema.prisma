@@ -132,6 +132,8 @@ model Transaction {
   updatedAt           DateTime @updatedAt
 
   account             Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([accountId, date])
 }
 
 model Security {
@@ -144,6 +146,8 @@ model Security {
   updatedAt       DateTime            @updatedAt
 
   holdings        InvestmentHolding[]           // many holdings can reference this security
+
+  @@index([ticker])
 }
 
 model InvestmentHolding {
@@ -158,7 +162,7 @@ model InvestmentHolding {
   updatedAt    DateTime @updatedAt
 
   account      Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  security     Security @relation(fields: [securityId], references: [id])
+  security     Security @relation(fields: [securityId], references: [id], onDelete: Cascade)
 
   @@unique([accountId, securityId]) // one holding per security per account
 }
@@ -229,6 +233,8 @@ model RecurringStream {
   updatedAt          DateTime  @updatedAt
 
   account            Account   @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([accountId])
 }
 
 model SavingsGoal {
