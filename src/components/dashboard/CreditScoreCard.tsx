@@ -69,7 +69,12 @@ export default function CreditScoreCard() {
         Credit Score Estimate
       </h3>
 
-      <svg viewBox="0 0 200 120" className="w-48 mx-auto">
+      <svg
+        viewBox="0 0 200 120"
+        className="w-48 mx-auto"
+        role="img"
+        aria-label={`Credit score: ${data.score} out of 850`}
+      >
         {/* Background arc */}
         <path
           d="M 20 100 A 80 80 0 0 1 180 100"

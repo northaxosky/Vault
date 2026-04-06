@@ -106,6 +106,7 @@ export default function WidgetCustomizer({
                   checked={selected.includes(widget.id)}
                   onChange={() => toggle(widget.id)}
                   className="mt-0.5 h-4 w-4 rounded border-border accent-primary"
+                  aria-label={`Toggle ${widget.label}`}
                 />
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-foreground">

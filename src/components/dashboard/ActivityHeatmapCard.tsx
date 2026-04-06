@@ -151,9 +151,13 @@ export default function ActivityHeatmapCard() {
       </div>
 
       {/* Heatmap grid with day labels */}
-      <div className="flex gap-1">
+      <div
+        className="flex gap-1"
+        role="img"
+        aria-label={`Transaction activity heatmap showing ${days.length} days of activity`}
+      >
         {/* Day-of-week labels */}
-        <div className="grid grid-rows-7 gap-1 shrink-0">
+        <div className="grid grid-rows-7 gap-1 shrink-0" aria-hidden="true">
           {dayLabels.map((label, i) => (
             <span
               key={i}
@@ -167,6 +171,7 @@ export default function ActivityHeatmapCard() {
         {/* Cells */}
         <div
           className="grid gap-1 flex-1"
+          aria-hidden="true"
           style={{
             gridTemplateColumns: `repeat(${totalCols}, 1fr)`,
             gridTemplateRows: "repeat(7, 1fr)",

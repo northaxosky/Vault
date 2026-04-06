@@ -102,6 +102,11 @@ export default function BudgetOverviewCard() {
               <div className="h-2 rounded-full bg-muted/30">
                 <div
                   className="h-full rounded-full transition-all"
+                  role="progressbar"
+                  aria-valuenow={budget.spent}
+                  aria-valuemin={0}
+                  aria-valuemax={budget.limit}
+                  aria-label={`${budget.label} budget: ${formatCurrency(budget.spent)} of ${formatCurrency(budget.limit)} spent`}
                   style={{
                     width: `${Math.min(budget.percentage, 100)}%`,
                     backgroundColor: color,
