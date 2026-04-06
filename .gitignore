@@ -61,3 +61,8 @@ prisma/*.db-journal
 .github/extensions/
 
 /src/generated/prisma
+
+# playwright
+test-results/
+playwright-report/
+playwright/.cache/
