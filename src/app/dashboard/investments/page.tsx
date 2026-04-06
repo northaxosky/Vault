@@ -1,8 +1,28 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import InvestmentsClient from "@/components/InvestmentsClient";
+import { isDemoMode } from "@/lib/demo";
 
 export default async function InvestmentsPage() {
+  if (isDemoMode()) {
+    return (
+      <InvestmentsClient
+        accounts={[{
+          accountId: "acc-4",
+          accountName: "Fidelity 401k",
+          institutionName: "Fidelity",
+          holdings: [
+            { id: "h-1", quantity: 45, costBasis: 7200, currentValue: 8910, currency: "USD", securityName: "Vanguard Total Stock Market ETF", ticker: "VTI", securityType: "etf" },
+            { id: "h-2", quantity: 30, costBasis: 5400, currentValue: 6450, currency: "USD", securityName: "Vanguard Total Bond Market ETF", ticker: "BND", securityType: "etf" },
+            { id: "h-3", quantity: 20, costBasis: 9000, currentValue: 10200, currency: "USD", securityName: "Vanguard S&P 500 ETF", ticker: "VOO", securityType: "etf" },
+            { id: "h-4", quantity: 15, costBasis: 6000, currentValue: 8640, currency: "USD", securityName: "Vanguard International Stock ETF", ticker: "VXUS", securityType: "etf" },
+          ],
+        }]}
+        summary={{ totalValue: 34200, totalCostBasis: 27600, totalGainLoss: 6600, gainLossPercent: 23.91 }}
+      />
+    );
+  }
+
   const session = await auth();
 
   // Fetch all investment holdings for this user.

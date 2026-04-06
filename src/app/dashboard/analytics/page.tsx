@@ -3,8 +3,30 @@ import { prisma } from "@/lib/prisma";
 import AnalyticsClient from "@/components/AnalyticsClient";
 import AnalyticsSkeleton from "@/components/AnalyticsSkeleton";
 import { Suspense } from "react";
+import { isDemoMode } from "@/lib/demo";
+import { DEMO_TRANSACTIONS, DEMO_BUDGETS } from "@/lib/demo-data";
 
 async function AnalyticsContent() {
+  if (isDemoMode()) {
+    return (
+      <AnalyticsClient
+        transactions={DEMO_TRANSACTIONS.map((t) => ({
+          id: t.id,
+          amount: t.amount,
+          date: t.date,
+          category: t.category,
+          merchantName: t.merchantName,
+          accountId: "acc-1",
+          accountName: t.accountName,
+        }))}
+        budgets={DEMO_BUDGETS.map((b) => ({
+          category: b.category,
+          amount: b.limit,
+        }))}
+      />
+    );
+  }
+
   const session = await auth();
 
   // Fetch transactions from the last 24 months

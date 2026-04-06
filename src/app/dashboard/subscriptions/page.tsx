@@ -1,8 +1,42 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import SubscriptionsClient from "@/components/SubscriptionsClient";
+import { isDemoMode } from "@/lib/demo";
+import { DEMO_RECURRING } from "@/lib/demo-data";
 
 export default async function SubscriptionsPage() {
+  if (isDemoMode()) {
+    const now = new Date();
+    const sixMonthsAgo = new Date(now);
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+    return (
+      <SubscriptionsClient
+        streams={DEMO_RECURRING.map((r, i) => ({
+          id: `sub-${i}`,
+          plaidStreamId: `plaid-stream-${i}`,
+          merchantName: r.name,
+          description: r.name,
+          category: "ENTERTAINMENT",
+          subcategory: null,
+          firstDate: sixMonthsAgo.toISOString(),
+          lastDate: now.toISOString(),
+          lastAmount: r.amount,
+          averageAmount: r.amount,
+          predictedNextDate: r.date,
+          frequency: r.frequency,
+          isActive: true,
+          status: "MATURE",
+          streamType: "EXPENSE",
+          currency: "USD",
+          cancelledByUser: false,
+          cancelledAt: null,
+          accountName: "Chase Checking",
+        }))}
+      />
+    );
+  }
+
   const session = await auth();
 
   const rawStreams = await prisma.recurringStream.findMany({

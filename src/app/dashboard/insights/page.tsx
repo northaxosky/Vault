@@ -1,8 +1,30 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import InsightsClient from "@/components/InsightsClient";
+import { isDemoMode } from "@/lib/demo";
+import { DEMO_TRANSACTIONS, DEMO_BUDGETS } from "@/lib/demo-data";
 
 export default async function InsightsPage() {
+  if (isDemoMode()) {
+    return (
+      <InsightsClient
+        transactions={DEMO_TRANSACTIONS.map((t) => ({
+          amount: t.amount,
+          date: t.date,
+          category: t.category,
+          merchantName: t.merchantName,
+          name: t.name,
+        }))}
+        budgets={DEMO_BUDGETS.map((b) => ({
+          category: b.category,
+          amount: b.limit,
+        }))}
+        snapshots={[]}
+        currentNetWorth={50326.34}
+      />
+    );
+  }
+
   const session = await auth();
 
   // Last 13 months of data for month-over-month comparisons

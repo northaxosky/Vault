@@ -1,8 +1,25 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import BudgetsClient from "@/components/BudgetsClient";
+import { isDemoMode } from "@/lib/demo";
+import { DEMO_BUDGETS, DEMO_CATEGORY_SPENDING } from "@/lib/demo-data";
 
 export default async function BudgetsPage() {
+  if (isDemoMode()) {
+    return (
+      <BudgetsClient
+        budgets={DEMO_BUDGETS.map((b) => ({
+          id: b.category,
+          category: b.category,
+          amount: b.limit,
+        }))}
+        categorySpending={Object.fromEntries(
+          DEMO_CATEGORY_SPENDING.map((c) => [c.category, c.total]),
+        )}
+      />
+    );
+  }
+
   const session = await auth();
 
   // Fetch user's budgets

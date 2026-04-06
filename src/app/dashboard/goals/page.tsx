@@ -1,8 +1,46 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import GoalsClient from "@/components/GoalsClient";
+import { isDemoMode } from "@/lib/demo";
+import { DEMO_SAVINGS_GOALS, DEMO_DEBTS, DEMO_RECURRING } from "@/lib/demo-data";
 
 export default async function GoalsPage() {
+  if (isDemoMode()) {
+    return (
+      <GoalsClient
+        goals={DEMO_SAVINGS_GOALS.map((g, i) => ({
+          id: `goal-${i}`,
+          name: g.name,
+          targetAmount: g.target,
+          currentAmount: g.current,
+          deadline: g.deadline,
+          linkedAccountId: null,
+          linkedAccountName: null,
+        }))}
+        debts={DEMO_DEBTS.map((d, i) => ({
+          id: `debt-${i}`,
+          name: d.name,
+          balance: d.balance,
+          interestRate: d.interestRate,
+          minimumPayment: d.minimumPayment,
+          linkedAccountId: null,
+          linkedAccountName: null,
+        }))}
+        currentBalance={50326.34}
+        recurringStreams={DEMO_RECURRING.map((r) => ({
+          averageAmount: r.amount,
+          frequency: r.frequency,
+          predictedNextDate: r.date,
+          streamType: "EXPENSE",
+          merchantName: r.name,
+          description: r.name,
+          currency: "USD",
+        }))}
+        accounts={[]}
+      />
+    );
+  }
+
   const session = await auth();
 
   // --- Savings Goals ---

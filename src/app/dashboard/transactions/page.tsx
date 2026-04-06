@@ -1,8 +1,14 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import TransactionsClient from "@/components/TransactionsClient";
+import { isDemoMode } from "@/lib/demo";
+import { DEMO_TRANSACTIONS } from "@/lib/demo-data";
 
 export default async function TransactionsPage() {
+  if (isDemoMode()) {
+    return <TransactionsClient transactions={DEMO_TRANSACTIONS} />;
+  }
+
   const session = await auth();
 
   // Query all transactions for the logged-in user.

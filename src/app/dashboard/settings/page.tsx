@@ -1,10 +1,40 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import SettingsClient from "@/components/settings/SettingsClient";
+import { isDemoMode } from "@/lib/demo";
+import { DEMO_USER, DEMO_SETTINGS, DEMO_INSTITUTIONS } from "@/lib/demo-data";
 
 export default async function SettingsPage() {
-  // Auth is handled by the dashboard layout, but we need the session
-  // to fetch user-specific data.
+  if (isDemoMode()) {
+    return (
+      <SettingsClient
+        userName={DEMO_USER.name}
+        userEmail={DEMO_USER.email}
+        userCreatedAt={DEMO_SETTINGS.createdAt}
+        settings={{
+          accentHue: DEMO_SETTINGS.accentHue,
+          currency: DEMO_SETTINGS.currency,
+          dateFormat: DEMO_SETTINGS.dateFormat,
+          emailAlerts: DEMO_SETTINGS.emailAlerts,
+          spendingAlert: DEMO_SETTINGS.spendingAlert,
+          lowBalanceAlert: DEMO_SETTINGS.lowBalanceAlert,
+          weeklyDigest: DEMO_SETTINGS.weeklyDigest,
+        }}
+        linkedAccounts={DEMO_INSTITUTIONS.map((inst) => ({
+          id: inst.id,
+          institutionName: inst.institutionName,
+          createdAt: inst.createdAt,
+          accounts: inst.accounts.map((acc) => ({
+            id: acc.id,
+            name: acc.name,
+            type: acc.type,
+            subtype: acc.subtype,
+          })),
+        }))}
+      />
+    );
+  }
+
   const session = await auth();
 
   // Fetch settings (upsert to ensure defaults exist)

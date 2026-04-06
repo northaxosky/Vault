@@ -1,8 +1,21 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import AccountsClient from "@/components/AccountsClient";
+import { isDemoMode } from "@/lib/demo";
+import { DEMO_INSTITUTIONS } from "@/lib/demo-data";
 
 export default async function AccountsPage() {
+  if (isDemoMode()) {
+    return (
+      <AccountsClient
+        institutions={DEMO_INSTITUTIONS.map((inst) => ({
+          ...inst,
+          accounts: inst.accounts.map((acc) => ({ ...acc, transactionCount: 0 })),
+        }))}
+      />
+    );
+  }
+
   const session = await auth();
 
   // Fetch all linked institutions with accounts, including transaction
