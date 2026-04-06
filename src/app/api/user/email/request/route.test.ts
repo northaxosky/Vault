@@ -12,6 +12,7 @@ vi.mock("@/lib/prisma", () => ({
 vi.mock("@/lib/email", () => ({
   sendEmailChangeVerification: vi.fn(),
 }));
+vi.mock("@/lib/rate-limit", () => ({ rateLimit: vi.fn() }));
 
 const mockCompare = vi.fn();
 vi.mock("bcryptjs", () => ({
@@ -23,6 +24,7 @@ import { POST } from "./route";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { sendEmailChangeVerification } from "@/lib/email";
+import { rateLimit } from "@/lib/rate-limit";
 
 function makeRequest(body: Record<string, unknown>) {
   return new Request("http://localhost/api/user/email/request", {
@@ -35,6 +37,7 @@ function makeRequest(body: Record<string, unknown>) {
 describe("POST /api/user/email/request", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(rateLimit).mockReturnValue({ success: true, remaining: 4, resetAt: 0 });
   });
 
   it("returns 401 when not authenticated", async () => {
