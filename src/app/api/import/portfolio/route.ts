@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { isDemoMode } from "@/lib/demo";
+import { rateLimit } from "@/lib/rate-limit";
 import {
   parsePortfolioCsv,
   detectPortfolioFormat,
@@ -35,6 +36,17 @@ export async function POST(request: Request) {
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { success } = rateLimit(`portfolio-import:${session.user.id}`, {
+    max: 10,
+    windowMs: 60 * 60 * 1000,
+  });
+  if (!success) {
+    return NextResponse.json(
+      { error: "Too many requests" },
+      { status: 429, headers: { "Retry-After": "3600" } },
+    );
   }
 
   if (isDemoMode()) {

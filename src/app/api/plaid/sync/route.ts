@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { decrypt } from "@/lib/encryption";
 import { sendAlertEmail } from "@/lib/email";
 import { isDemoMode } from "@/lib/demo";
+import { rateLimit } from "@/lib/rate-limit";
 
 export async function POST() {
   if (isDemoMode()) {
@@ -14,6 +15,17 @@ export async function POST() {
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { success } = rateLimit(`plaid-sync:${session.user.id}`, {
+    max: 10,
+    windowMs: 5 * 60 * 1000,
+  });
+  if (!success) {
+    return NextResponse.json(
+      { error: "Too many requests" },
+      { status: 429, headers: { "Retry-After": "300" } },
+    );
   }
 
   try {
