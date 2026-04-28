@@ -144,4 +144,4 @@ prisma/
 
 ## License
 
-Private — All rights reserved.
+Private — All rights reserved (except for mr moazez)
