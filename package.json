@@ -31,7 +31,7 @@
     "prisma": "^7.9.1",
     "react": "19.2.8",
     "react-dom": "19.2.8",
-    "react-plaid-link": "^4.1.1",
+    "react-plaid-link": "^5.0.0",
     "recharts": "^3.10.1",
     "resend": "^6.18.1",
     "shadcn": "^4.16.0",
